@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace Product
 {
     enum Conditions { Virus = -1, NonDefined, New, Normal, Rotten, Toxic };
@@ -6,16 +8,11 @@ namespace Product
 
     class Vegetable
     {
+        public Guid ID = Guid.NewGuid();
         public string? Name { get; set; }
         public double BuyPrice { get; set; }
         public double SellPrice { get; set; }
         public Conditions Condition { get; set; }
-
-        void ok()
-        {
-            Extra ed = new Extra();
-            Extra.GetRandom()
-        }
 
         public static VegetableList GetClassName() => VegetableList.Vegatable;
         public void Decay() {
@@ -23,5 +20,8 @@ namespace Product
             else Condition = Conditions.Toxic; 
         }
         public override string ToString() => $"{Name} --> {BuyPrice.ToString()} ~ {SellPrice.ToString()} --> {Condition.ToString()}";
+
+        public static bool operator==(Vegetable v1, Vegetable v2) => v1.ID == v2.ID;
+        public static bool operator!=(Vegetable v1, Vegetable v2) => v1.ID != v2.ID;
     }
 }

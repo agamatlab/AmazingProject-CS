@@ -59,12 +59,24 @@ class Store
         Budget -= moneySpent;
     }
 
+    IEnumerable<Vegetable> RemoveUnwantedCondition(IEnumerable<Vegetable> vegetables, Conditions condition)
+    {
+        foreach (var vegetable in vegetables)
+        {
+            if (vegetable.Condition == condition) { 
+                vegetables = vegetables.Where(v => v != vegetable).Reverse(); 
+                OnNotify -= vegetable.Decay;
+            }
+        }
+
+        return vegetables;
+    }
+
     void ReOrganize(IEnumerable<Vegetable> newStock, IEnumerable<Vegetable> oldStock)
     {
         foreach (var vegetable in newStock)
         {
             if (vegetable.Condition == Conditions.Virus) OnNotify += vegetable.Decay;
-            else newStock.d
         }
         // newStock.Concat(oldStock);
     }
