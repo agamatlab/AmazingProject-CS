@@ -7,31 +7,115 @@ class RunStore
 
     public static uint DayCount { get; set; } = default;
     public static List<Notification> Notifications{ get; set; } = new List<Notification>();
-    public static Store Store = new Store(0, 0, "MyStore", 5000);
+    public static Store Store = new Store(0, 100, "MyStore", 1000);
 
     static void Main(string[] args)
     {
-        Store.Stend.Add(new Vegetable(.132) { Name = DefaultValues.VegetableList.Tomato.ToString(), Condition = Conditions.NonDefined, BuyPrice = .84, SellPrice = 1.99 }, new Stack<Vegetable>());
-        Store.Stend.Add(new Vegetable(.22) { Name =  DefaultValues.VegetableList.Cucumber.ToString(), Condition = Conditions.NonDefined, BuyPrice = 2.16, SellPrice = 3.39 }, new Stack<Vegetable>());
-        Store.Stend.Add(new Vegetable(.34) { Name =  DefaultValues.VegetableList.Union.ToString(), Condition = Conditions.NonDefined, BuyPrice = .55, SellPrice = 1.39 }, new Stack<Vegetable>());
-        Store.Stend.Add(new Vegetable(.11) { Name =  DefaultValues.VegetableList.Garlic.ToString(), Condition = Conditions.NonDefined, BuyPrice = .96, SellPrice = 2.19 }, new Stack<Vegetable>());
-        Store.Stend.Add(new Vegetable(.48) { Name =  DefaultValues.VegetableList.Grape.ToString(), Condition = Conditions.NonDefined, BuyPrice = 2.24, SellPrice = 4.49 }, new Stack<Vegetable>());
-        Store.Stend.Add(new Vegetable(.312) { Name = DefaultValues.VegetableList.Pomegranate.ToString(), Condition = Conditions.NonDefined, BuyPrice = 4.50, SellPrice = 8.99 }, new Stack<Vegetable>());
+        {
+
+            Store.Stends.Add(DefaultValues.VegetableList.Tomato.ToString(), 
+            new Stend()
+                {
+                    BuyPrice = .84,
+                    SellPrice = 1.99,
+                    AvrageWeight = .132,
+                    Product = new Vegetable(.132)
+                    {
+                        Condition = Conditions.NonDefined,
+                        Name = DefaultValues.VegetableList.Tomato.ToString(),
+                    }
+                }
+            );
+
+        
+            Store.Stends.Add(DefaultValues.VegetableList.Cucumber.ToString(), 
+            new Stend()
+                {
+                    BuyPrice = 2.16,
+                    SellPrice = 3.39,
+                    AvrageWeight = .214,
+                    Product = new Vegetable(.214)
+                    {
+                        Condition = Conditions.NonDefined,
+                        Name = DefaultValues.VegetableList.Cucumber.ToString(),
+                    }
+                }
+            );
+
+        
+            Store.Stends.Add(DefaultValues.VegetableList.Union.ToString(), 
+            new Stend()
+                {
+                    BuyPrice = .55,
+                    SellPrice = 1.36,
+                    AvrageWeight = .112,
+                    Product = new Vegetable(.112)
+                    {
+                        Condition = Conditions.NonDefined,
+                        Name = DefaultValues.VegetableList.Union.ToString(),
+                    }
+                }
+            );
+
+            Store.Stends.Add(DefaultValues.VegetableList.Garlic.ToString(), 
+            new Stend()
+                {
+                    BuyPrice = .96,
+                    SellPrice = 2.19,
+                    AvrageWeight = .33,
+                    Product = new Vegetable(.33)
+                    {
+                        Condition = Conditions.NonDefined,
+                        Name = DefaultValues.VegetableList.Garlic.ToString(),
+                    }
+                }
+            );
+
+            Store.Stends.Add(DefaultValues.VegetableList.Grape.ToString(), 
+            new Stend()
+                {
+                    BuyPrice = 2.24,
+                    SellPrice = 4.49,
+                    AvrageWeight = .48,
+                    Product = new Vegetable(.48)
+                    {
+                        Condition = Conditions.NonDefined,
+                        Name = DefaultValues.VegetableList.Grape.ToString(),
+                    }
+                }
+            );
+
+            Store.Stends.Add(DefaultValues.VegetableList.Pomegranate.ToString(), 
+            new Stend()
+                {
+                    BuyPrice = 4.5,
+                    SellPrice = 8.99,
+                    AvrageWeight = .312,
+                    Product = new Vegetable(.312)
+                    {
+                        Condition = Conditions.NonDefined,
+                        Name = DefaultValues.VegetableList.Pomegranate.ToString(),
+                    }
+                }
+            );
+
+        }
 
 
         Store.NewDay();
 
-        foreach (var pair in Store.Stend)
-            foreach (var item in pair.Value)
+        foreach (var pair in Store.Stends)
+            foreach (var item in pair.Value.Stock)
                 Console.WriteLine(item);
 
         Console.WriteLine("\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-        Store.NewDay();
+        Console.ReadKey();
 
+        List<Customer> list = new List<Customer>();
+        for (int i = 0; i < 100; i++)
+            list = list.Append(new Customer(Store.Rating)).ToList();
 
-        foreach (var pair in Store.Stend)
-            foreach (var item in pair.Value)
-                Console.WriteLine(item);
+        Store.StartSales(list);
     }
 
 }
