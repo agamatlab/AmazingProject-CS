@@ -1,6 +1,7 @@
 ﻿using Product;
 using System.Linq;
 
+
 class Store
 {
     public Store(uint clientCount, byte rating, string? name, uint budget)
@@ -12,25 +13,35 @@ class Store
 
     }
 
+    private byte _rating;
+
+    public byte Rating
+    {
+        get { return _rating; }
+        set { if (value < 1) Environment.Exit(777); _rating = value; }
+    }
+
+
     public event Action? OnNotify;
     public uint ClientCount { get; set; }
-    public byte Rating { get; set; }
     public string? Name { get; set; }
     public double Budget { get; set; }
+    public uint CustomerCount { get; set; } = 0;
     //public Dictionary<string, Vegetable>? Vegetables{ get; set; }
-    public Dictionary<Vegetable, Stack<Vegetable>> Stend { get; set; } = new();
+    public Dictionary<string, Stend> Stends { get; set; } = new();
 
     public void NewDay()
     {
         OnNotify?.Invoke();
         ReStock();
 
-        int initialSize = Stend.Sum(p => p.Value.Count);
+        int initialSize = Stends.Sum(p => p.Value.Stock.Count);
 
-        foreach (var pair in Stend)
-            Stend[pair.Key] = RemoveUnwantedCondition(pair.Value, Conditions.Toxic,Conditions.Virus);
+        foreach (var pair in Stends)
+            pair.Value.Stock = RemoveUnwantedCondition(pair.Value.Stock, Conditions.Toxic,Conditions.Virus);
 
-        RunStore.Notifications.Add(new Notification(String.Format(Extra.templateRemovedVegetable, (initialSize - Stend.Sum(p => p.Value.Count)).ToString() )));
+        RunStore.Notifications.Add(new Notification(String.Format(Extra.templateRemovedVegetable, 
+            (initialSize - Stends.Sum(p => p.Value.Stock.Count)).ToString() )));
     }
 
     private void AddVegetable(Stack<Vegetable> stock, Vegetable element)
@@ -41,29 +52,28 @@ class Store
 
     void ReStock()
     {
-        uint sum = (uint)Stend.Average(p => p.Value.Count);
+        uint sum = (uint)Stends.Average(p => p.Value.Stock.Count);
         double moneySpent = default;
         Random rand = new Random();
         
-        foreach (var pair in Stend)
+        foreach (var pair in Stends)
         {
             Stack<Vegetable> newVegetables = new Stack<Vegetable>();
-            Vegetable @ref = pair.Key;
+            Stend stend = pair.Value;
 
-            var useableMoney = Budget * ((sum != 0)? pair.Value.Count / (double)sum : 1.0 / Stend.Count);
-            int count = (int)(useableMoney / @ref.BuyPrice);
-            moneySpent += count * @ref.BuyPrice;
+            var useableMoney = Budget * ((sum != 0)? stend.Stock.Count / (double)sum : 1.0 / Stends.Count);
+            int count = (int)(useableMoney / stend.BuyPrice);
+            moneySpent += count * stend.BuyPrice;
 
             for (int i = 0; i < count; i++)
             {
-
-                Vegetable vegetable = new Vegetable(DefaultValues.MinimumWeights[pair.Key.Name ?? "none"]) { Name = @ref.Name, BuyPrice = @ref.BuyPrice, 
-                    Condition = (rand.Next(0,100) == 1) ? Conditions.Virus : Conditions.New, SellPrice = @ref.SellPrice };
+                Vegetable vegetable = pair.Value.CreateNewSample();
                 OnNotify += vegetable.Decay;
                 newVegetables.Push(vegetable);
             }
 
-            Stend[pair.Key] = new Stack<Vegetable>(newVegetables.Concat(pair.Value));
+
+            pair.Value.Stock = new Stack<Vegetable>(newVegetables.Concat(pair.Value.Stock));
         }
         Budget -= moneySpent;
     }
@@ -88,12 +98,51 @@ class Store
         // newStock.Concat(oldStock);
     }
 
+    void NegativeReview() { Rating -= (byte)Extra.GetRandom(1, 5); 
+        Console.WriteLine($"NegativeReview() Called => Current Rating: {Rating}"); }
 
-    void StartSales(List<Customer> customers)
+    public void StartSales(List<Customer> customers)
     {
         foreach (var customer in customers)
         {
-            //var currentStock = Stend[customer.WantToBuy];
+            var currentStend = Stends[customer.WantToBuy];
+            if (currentStend.Stock.Count == 0){
+                NegativeReview();
+                continue;
+            }
+
+                               Console.WriteLine(customer);
+
+            int quantity = (int)(customer.HowMuch / currentStend.AvrageWeight);
+            bool isContinue = true;
+
+                         Console.WriteLine($"Quantity: {quantity}");
+
+            for (int i = 0; i < quantity && isContinue; i++)
+            {
+                currentStend.Stock.TryPop(out Vegetable? bought);
+                if (bought != null)
+                    switch (bought.Condition)
+                    {
+                        case Conditions.Normal:
+                        case Conditions.New:
+                            OnNotify -= bought.Decay;
+                            Budget += currentStend.SellPrice;
+                            break;
+                        case Conditions.Toxic:
+                        case Conditions.Virus:
+                            NegativeReview();
+                            isContinue = false;
+                            break;
+                    }
+                else break;
+                        
+                        
+                        if (bought != null) Console.WriteLine($"{bought} --> In Stock{currentStend.Stock.Count}");
+                                      Console.ReadKey();
+            }
+
+            if(!isContinue)CustomerCount++;
         }
     }
 }

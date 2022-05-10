@@ -2,7 +2,7 @@
 
 static class DefaultValues
 {
-    public enum VegetableList { Vegatable = -1, Cucumber = 1, Tomato, Union, Garlic, Grape, Pomegranate };
+    public enum VegetableList { Cucumber = 1, Tomato, Union, Garlic, Grape, Pomegranate };
     public static Dictionary<string, double> MinimumWeights = JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText("MinimumWeights.txt"));
 
 }
@@ -18,6 +18,6 @@ static class Extra
     }
 
     public static string templateRemovedVegetable = "Found and Removed => {0} Toxic / Virus Vegetables";
-    public static uint GetRandom(uint min = 0, uint max = 1000) 
-        => min + (uint)(DateTime.Now.Millisecond % (max - min));
+    public static int GetRandom(int min = 0, int max = 1000) 
+        => min + (DateTime.Now.Millisecond % (max - min));
 }
