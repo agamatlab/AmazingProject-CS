@@ -12,6 +12,7 @@ class RunStore
     static void Main(string[] args)
     {
         {
+            Console.WriteLine("Test Merge");
 
             Store.Stends.Add(DefaultValues.VegetableList.Tomato.ToString(), 
             new Stend()
