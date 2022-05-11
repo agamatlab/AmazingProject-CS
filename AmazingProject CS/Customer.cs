@@ -7,9 +7,9 @@ class Customer {
 
     public Customer(uint Rating)
     {
-        WantToBuy = typeof(DefaultValues.VegetableList).GetRandomEnumValue().ToString();
-        HowMuch = DefaultValues.MinimumWeights[WantToBuy ?? "none"]+ Extra.GetRandom((int)Rating / 10, (int)Rating / 10 + 5) 
-            + Extra.GetRandom(1,10) / 10;
+        WantToBuy = DefaultValues.GetRandomEnumVegetable();
+        HowMuch = DefaultValues.MinimumWeights[WantToBuy ?? "none"]+ Extra.GetRandom((int)Rating / 35, (int)Rating / 35 + 3) 
+            + Extra.GetRandom(1,10) / 30;
     }
 
     public override string ToString() => $"Customer Wants To Buy => {HowMuch} {WantToBuy}";

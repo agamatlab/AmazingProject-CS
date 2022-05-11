@@ -18,7 +18,10 @@ class Store
     public byte Rating
     {
         get { return _rating; }
-        set { if (value < 1) Environment.Exit(777); _rating = value; }
+        set { if (value < 1) Environment.Exit(777); 
+            else if(_rating + value > 100) _rating = 100; 
+            else _rating = value; 
+        }
     }
 
 
@@ -32,8 +35,11 @@ class Store
 
     public void NewDay()
     {
+                    Console.WriteLine("Budget starts: {0}", Budget);
         OnNotify?.Invoke();
         ReStock();
+                    Console.WriteLine("Budget ends: {0}", Budget);
+
 
         int initialSize = Stends.Sum(p => p.Value.Stock.Count);
 
@@ -42,6 +48,8 @@ class Store
 
         RunStore.Notifications.Add(new Notification(String.Format(Extra.templateRemovedVegetable, 
             (initialSize - Stends.Sum(p => p.Value.Stock.Count)).ToString() )));
+        
+        RunStore.DayCount++;
     }
 
     private void AddVegetable(Stack<Vegetable> stock, Vegetable element)
@@ -52,7 +60,7 @@ class Store
 
     void ReStock()
     {
-        uint sum = (uint)Stends.Average(p => p.Value.Stock.Count);
+        uint sum = (uint)Stends.Sum(p => p.Value.Stock.Count);
         double moneySpent = default;
         Random rand = new Random();
         
@@ -106,7 +114,9 @@ class Store
         foreach (var customer in customers)
         {
             var currentStend = Stends[customer.WantToBuy];
-            if (currentStend.Stock.Count == 0){
+            if (currentStend.Stock.Count == 0)
+            {
+                Console.WriteLine("No {0} LEft", customer.WantToBuy);
                 NegativeReview();
                 continue;
             }
@@ -131,18 +141,24 @@ class Store
                             break;
                         case Conditions.Toxic:
                         case Conditions.Virus:
+                            Console.WriteLine("Veegetable Contain Virus or Toxic...");
                             NegativeReview();
                             isContinue = false;
                             break;
+                        case Conditions.Rotten:
+                            i--;
+                            break;
                     }
                 else break;
-                        
-                        
-                        if (bought != null) Console.WriteLine($"{bought} --> In Stock{currentStend.Stock.Count}");
-                                      Console.ReadKey();
+
+
+                // if (bought != null) Console.WriteLine($"{bought} --> In Stock{currentStend.Stock.Count}");
             }
 
-            if(!isContinue)CustomerCount++;
+            if (isContinue) { CustomerCount++; Rating++;
+                Console.WriteLine("Store Rating IS CURRENTLY: {0}", Rating); }
+                            
+                            Console.ReadKey();
         }
     }
 }
