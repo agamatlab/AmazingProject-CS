@@ -19,7 +19,12 @@ class Stend
 
     public Vegetable CreateNewSample()
         => new Vegetable(AvrageWeight)
-            { Condition = Conditions.New, Name = Product.Name };
+            { 
+            Condition = ((Random.Shared.Next(1,100) == 1) 
+                ? Conditions.Toxic 
+                : Conditions.New),
+            Name = Product.Name 
+            };
 
     public Stack<Vegetable> Stock { get; set; } = new Stack<Vegetable>();
 

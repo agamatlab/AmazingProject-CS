@@ -2,13 +2,13 @@
 using Product;
 using System.Drawing;
 using System.Text.Json;
+//using Colorful;
+//using Console = Colorful.Console;
 
 class RunStore
 {
     static void Design()
-    {
-        
-    }
+    { }
 
     public static uint DayCount { get; set; } = default;
     public static List<Notification> Notifications{ get; set; } = new List<Notification>();
@@ -16,7 +16,6 @@ class RunStore
 
     static void Main(string[] args)
     {
-
         {
 
             Store.Stends.Add(DefaultValues.VegetableList.Tomato.ToString(), 
@@ -109,7 +108,7 @@ class RunStore
 
         for (int k = 0; k < 10; k++)
         {
-             Store.NewDay();
+            Store.NewDay();
 
             List<Customer> list = new List<Customer>();
             int loops = Store.Rating;
@@ -121,6 +120,9 @@ class RunStore
 
             Console.Clear();
         }
-    }
+
+        foreach (var item in Notifications)
+            Console.WriteLine(item);
+    }   
 
 }

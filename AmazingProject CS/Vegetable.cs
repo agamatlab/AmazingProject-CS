@@ -3,7 +3,8 @@ using System;
 
 namespace Product
 {
-    enum Conditions { Virus = -1, NonDefined, New, Normal, Rotten, Toxic };
+    // Virus = -101, 
+    enum Conditions { NonDefined, New, Normal, Rotten, Toxic };
 
     class Vegetable
     {
