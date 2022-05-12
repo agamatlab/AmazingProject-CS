@@ -1,15 +1,29 @@
-﻿using Product;
+﻿using ConsoleTables;
+using Product;
+using System.Drawing;
 using System.Linq;
-
+using UIElements;
 
 class Store
 {
-    public Store(uint clientCount, byte rating, string? name, uint budget)
+    private double _prof;
+
+    public double ProfitMargin
+    {
+        get { return _prof; }
+        set { 
+            if(value <= 1 && value >= 0)_prof = value; 
+            else throw new ArgumentOutOfRangeException("Profit must be between 1 and 0");
+        }
+    }
+
+    public Store(uint clientCount, byte rating, string? name, uint budget, double profit)
     {
         ClientCount = clientCount;
         Rating = rating;
         Name = name;
         Budget = budget;
+        ProfitMargin = profit;
 
     }
 
@@ -31,7 +45,7 @@ class Store
         get { return _budget; }
         set { 
             if ( value < 0) 
-                throw new ArgumentException("Value can't be less than 0"); 
+                throw new ArgumentOutOfRangeException("Value can't be less than 0"); 
             _budget = value; 
         }
     }
@@ -39,6 +53,7 @@ class Store
 
 
     public event Action? OnNotify;
+    public double Profit { get; set; }
     public uint ClientCount { get; set; }
     public string? Name { get; set; }
     public uint CustomerCount { get; set; } = 0;
@@ -47,6 +62,7 @@ class Store
 
     public void NewDay()
     {
+        Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine("Day {0}", RunStore.DayCount);
                     Console.WriteLine("Budget starts: {0}", Budget);
         OnNotify?.Invoke();
@@ -103,7 +119,7 @@ class Store
                         AddVegetable(pair.Value.Stock, pair.Value.CreateNewSample());
 
                     }
-                    catch (ArgumentException) { return false; }
+                    catch (ArgumentOutOfRangeException) { return false; }
 
         return true;
     }
@@ -128,7 +144,7 @@ class Store
                     Budget -= pair.Value.BuyPrice;
                     AddVegetable(pair.Value.Stock ,pair.Value.CreateNewSample());
                 }
-                catch (ArgumentException) { return; }
+                catch (ArgumentOutOfRangeException) { return; }
 
     }
 
@@ -179,51 +195,86 @@ class Store
     }
 
     void NegativeReview() { Rating -= (byte)Extra.GetRandom(1, 5); 
-        Console.WriteLine($"NegativeReview() Called => Current Rating: {Rating}"); }
+        // Console.WriteLine($"NegativeReview() Called => Current Rating: {Rating}"); 
+    }
+
+    ConsoleTable GetStatusTable()
+    {
+        var table = new ConsoleTable("Product Name", "Total Quantity", 
+             Conditions.New.ToString(), Conditions.Normal.ToString(),
+                Conditions.Rotten.ToString(), Conditions.Toxic.ToString());
+
+        foreach (var pair in Stends)
+            table.AddRow(pair.Value.Product.Name, pair.Value.Stock.Count,
+                pair.Value.Stock.Count(v => v.Condition == Conditions.New),
+                pair.Value.Stock.Count(v => v.Condition == Conditions.Normal),
+                pair.Value.Stock.Count(v => v.Condition == Conditions.Rotten),
+                pair.Value.Stock.Count(v => v.Condition == Conditions.Toxic)
+                );
+
+        return table;
+    }
 
     public void StartSales(List<Customer> customers)
     {
+        Colorful.Console.WriteWithGradient(GetStatusTable().ToString(), Color.Yellow, Color.Fuchsia, 14);
+
+        var table = new ConsoleTable("Customer NO.", "Wants To Buy", "How Much (kq)", "Quanity", "Rating", "Message");
+
         foreach (var customer in customers)
         {
+            CustomerCount++;
+
+            // Console.WriteLine($"Customer: {customerNO}/{customers.Count}");
             var currentStend = Stends[customer.WantToBuy];
+            int quantity = (int)(customer.HowMuch / currentStend.AvrageWeight);
+            
             if (currentStend.Stock.Count == 0)
             {
+
                 RunStore.Notifications
                     .Add(new Notification($"{customer.WantToBuy} Does Not Exist. Decreasing Rating..."));
                 
-                Console.WriteLine("No {0} LEft", customer.WantToBuy);
+                // Console.WriteLine("No {0} LEft", customer.WantToBuy);
                 NegativeReview();
+
+                table.AddRow(CustomerCount.ToString() ,customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(), 
+                    quantity.ToString(), Rating.ToString() ,$"NO {customer.WantToBuy} in STOCK.");
+
                 continue;
             }
 
-                               Console.WriteLine(customer);
+                               // Console.WriteLine(customer);
 
-            int quantity = (int)(customer.HowMuch / currentStend.AvrageWeight);
             bool isContinue = true;
 
-                         Console.WriteLine($"Quantity: {quantity}");
+                         // Console.WriteLine($"Quantity: {quantity}");
 
             for (int i = 0; i < quantity && isContinue; i++)
             {
-                
+
 
                 if (currentStend.Stock.TryPop(out Vegetable? bought))
                 {
-                    Console.WriteLine($"{bought} --> In Stock {currentStend.Stock.Count}");
+                    // Console.WriteLine($"{bought} --> In Stock {currentStend.Stock.Count}");
 
                     switch (bought.Condition)
                     {
                         case Conditions.Normal:
                         case Conditions.New:
                             OnNotify -= bought.Decay;
-                            Budget += currentStend.SellPrice;
+                            Budget += currentStend.SellPrice * (1 - ProfitMargin);
+                            Profit = currentStend.SellPrice * ProfitMargin;
                             break;
                         case Conditions.Toxic:
-                        //case Conditions.Virus:
-                            RunStore.Notifications.Add(new Notification() 
+                            //case Conditions.Virus:
+                            table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
+                                quantity.ToString(), Rating.ToString(), "Customer Faced Virused or Toxic Vegetable.");
+
+                            RunStore.Notifications.Add(new Notification()
                             { Message = $"Customer Faced Toxic or Virus {customer.WantToBuy}. Decreasing Rating..." });
 
-                            Console.WriteLine("Veegetable Contain Virus or Toxic...");
+                            // Console.WriteLine("Veegetable Contain Virus or Toxic...");
                             NegativeReview();
                             isContinue = false;
                             break;
@@ -232,14 +283,36 @@ class Store
                             break;
                     }
                 }
-
+                else
+                {
+                    table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
+                      quantity.ToString(), Rating.ToString(), "Customer wasn't able buy Enough Quantity => Stock Depleted.");
+                    isContinue = false;
+                    break;
+                }
             }
 
-            if (isContinue) { CustomerCount++; Rating++;
-                Console.WriteLine("Store Rating IS CURRENTLY: {0}\n\n", Rating); }
-                            
-                            // Console.ReadKey();
+            if (isContinue) {  
+                Rating++;
+
+                table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
+                    quantity.ToString(), Rating.ToString(), "Customer SUCCESSFULLY Shopped.");
+            }
+
+                                            //Console.ReadKey()
         }
+
+        // Console.ReadKey();
+
+        Console.WriteLine("\n\n");
+        Colorful.Console.WriteLine(table.ToString(), Color.White);
+        
+        Console.WriteLine("\n\n");
+        Colorful.Console.WriteWithGradient(GetStatusTable().ToString(), Color.Yellow, Color.Fuchsia, 14);
+
+        Console.ReadKey();
+
+
     }
 }
 
