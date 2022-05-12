@@ -13,6 +13,12 @@ namespace UIElements
             Console.InputEncoding = input;
         }
 
+        public static void ChangeEncoding(Encoding encoding)
+        {
+            Console.OutputEncoding = encoding;
+            Console.InputEncoding = encoding;
+        }
+
         public static void SetColor(ConsoleColor foreground = ConsoleColor.White, ConsoleColor background = ConsoleColor.Black)
         {
             Console.ForegroundColor = foreground;

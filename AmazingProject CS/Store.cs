@@ -3,7 +3,6 @@ using Product;
 using System.Drawing;
 using System.Linq;
 using UIElements;
-
 class Store
 {
     private double _prof;
@@ -63,7 +62,7 @@ class Store
     public void NewDay()
     {
         Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine("Day {0}", RunStore.DayCount);
+        Console.WriteLine("Day {0}", RunStore.DayCount);
                     Console.WriteLine("Budget starts: {0}", Budget);
         OnNotify?.Invoke();
         ReStock();
@@ -217,7 +216,7 @@ class Store
 
     public void StartSales(List<Customer> customers)
     {
-        Colorful.Console.WriteWithGradient(GetStatusTable().ToString(), Color.Yellow, Color.Fuchsia, 14);
+        RunStore.Statistics.BeforeStock = GetStatusTable().ToString();
 
         var table = new ConsoleTable("Customer NO.", "Wants To Buy", "How Much (kq)", "Quanity", "Rating", "Message");
 
@@ -303,16 +302,26 @@ class Store
         }
 
         // Console.ReadKey();
-
-        Console.WriteLine("\n\n");
-        Colorful.Console.WriteLine(table.ToString(), Color.White);
-        
-        Console.WriteLine("\n\n");
-        Colorful.Console.WriteWithGradient(GetStatusTable().ToString(), Color.Yellow, Color.Fuchsia, 14);
-
+        RunStore.Statistics.BuyerMessages = table.ToString();
+        RunStore.Statistics.AfterStock = GetStatusTable().ToString();
         Console.ReadKey();
 
 
+    }
+
+
+    public void Quarantine()
+    {
+        RunStore.Notifications.Add(new Notification("Quarantine Started... NO WORK for 14 DAYS"));
+        RunStore.Statistics.BeforeStock = GetStatusTable().ToString();
+        
+        RunStore.Statistics.BuyerMessages = new ConsoleTable("Message", "Quarantine Started... NO WORK for 14 DAYS").ToString();
+        foreach (var stend in Stends)
+            foreach (var vegetable in stend.Value.Stock)
+                vegetable.Condition = Conditions.Toxic;
+        
+        RunStore.Statistics.AfterStock = GetStatusTable().ToString();
+        RunStore.DayCount += 14;
     }
 }
 

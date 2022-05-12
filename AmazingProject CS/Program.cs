@@ -3,17 +3,21 @@ using Product;
 using System.Drawing;
 using System.Text.Json;
 using System.Media;
+using UIElements;
 //using Colorful;
 //using Console = Colorful.Console;
 
 class RunStore
 {
+    public static DayStats Statistics = new DayStats(); 
+
     static void StartMusic()
     {
         SoundPlayer player = new SoundPlayer();
         player.SoundLocation = @"C:\Users\user\source\repos\AmazingProject CS\AmazingProject CS\bin\Debug\net6.0\ConsoleMusic.wav";
         player.PlayLooping();
     }
+
     static void InitStore()
     {
         Store.Stends.Add(DefaultValues.VegetableList.Tomato.ToString(),
@@ -109,27 +113,51 @@ class RunStore
 
     static void Main(string[] args)
     {
+        UI.ChangeEncoding(System.Text.Encoding.Unicode);
+
         Console.SetWindowSize(Console.WindowWidth / 10 * 11, Console.WindowHeight/ 10 * 11);
         // StartMusic();
         InitStore();
 
+        string[] answers = new string[] { "Show Statistics of Day", "Continue", "Exit" };
+
         for (int k = 0; k < 10; k++)
         {
-            Store.NewDay();
+            if (Random.Shared.Next(0, 100) == 0) { Console.WriteLine("Quarantine Called..."); Store.Quarantine(); }
+            else
+            {
+                Store.NewDay();
 
-            List<Customer> list = new List<Customer>();
-            int loops = Store.Rating;
+                List<Customer> list = new List<Customer>();
+                int loops = Store.Rating;
 
-            for (int i = 0; i < loops; i++)
-                list = list.Append(new Customer(Store.Rating)).ToList();
+                for (int i = 0; i < loops; i++)
+                    list = list.Append(new Customer(Store.Rating)).ToList();
 
-            Store.StartSales(list);
+                Store.StartSales(list);
+            }
 
-            Console.Clear();
+            while (true)
+            {
+                int choice = UI.GetChoice("Do you Want To:", answers);
+                if (choice == 0) { Console.Clear(); Statistics.ShowStats(); }
+                else if (choice == 1) break;
+                else if (choice == 2) ExitProgram();
+                
+                Console.Clear();
+
+            }
+
+             Console.Clear();
+
         }
 
         foreach (var item in Notifications)
             Console.WriteLine(item);
-    }   
+    }
 
+    private static void ExitProgram()
+    {
+        Environment.Exit(0);
+    }
 }
