@@ -3,9 +3,12 @@ using System.Drawing;
 
 class DayStats
 {
+    public uint OnDay { get; set; } = default;
     public string BeforeStock { get; set; }
     public string AfterStock { get; set; }
     public string BuyerMessages { get; set; }
+
+    public DayStats() => OnDay = RunStore.DayCount;
 
     public void ShowStats()
     {

@@ -11,6 +11,7 @@ static class DefaultValues
     }
     public enum VegetableList { Cucumber = 1, Tomato, Union, Garlic, Grape, Pomegranate };
     public static Dictionary<string, double> MinimumWeights = JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText("MinimumWeights.txt"));
+    public const int DayCountWeek = 7;
 
 }
 

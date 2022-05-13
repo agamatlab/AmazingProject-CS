@@ -4,12 +4,9 @@ using System.Drawing;
 using System.Text.Json;
 using System.Media;
 using UIElements;
-//using Colorful;
-//using Console = Colorful.Console;
 
 class RunStore
 {
-    public static DayStats Statistics = new DayStats(); 
 
     static void StartMusic()
     {
@@ -18,9 +15,10 @@ class RunStore
         player.PlayLooping();
     }
 
-    static void InitStore()
+    static Dictionary<string, Stend> InitStore()
     {
-        Store.Stends.Add(DefaultValues.VegetableList.Tomato.ToString(),
+        Dictionary<string, Stend> Stends = new Dictionary<string, Stend>(); 
+        Stends.Add(DefaultValues.VegetableList.Tomato.ToString(),
         new Stend()
         {
             BuyPrice = .42,
@@ -35,7 +33,7 @@ class RunStore
         );
 
 
-        Store.Stends.Add(DefaultValues.VegetableList.Cucumber.ToString(),
+        Stends.Add(DefaultValues.VegetableList.Cucumber.ToString(),
         new Stend()
         {
             BuyPrice = 1.16,
@@ -50,7 +48,7 @@ class RunStore
         );
 
 
-        Store.Stends.Add(DefaultValues.VegetableList.Union.ToString(),
+        Stends.Add(DefaultValues.VegetableList.Union.ToString(),
         new Stend()
         {
             BuyPrice = .35,
@@ -64,7 +62,7 @@ class RunStore
         }
         );
 
-        Store.Stends.Add(DefaultValues.VegetableList.Garlic.ToString(),
+        Stends.Add(DefaultValues.VegetableList.Garlic.ToString(),
         new Stend()
         {
             BuyPrice = .86,
@@ -78,7 +76,7 @@ class RunStore
         }
         );
 
-        Store.Stends.Add(DefaultValues.VegetableList.Grape.ToString(),
+        Stends.Add(DefaultValues.VegetableList.Grape.ToString(),
         new Stend()
         {
             BuyPrice = 1.12,
@@ -92,7 +90,7 @@ class RunStore
         }
         );
 
-        Store.Stends.Add(DefaultValues.VegetableList.Pomegranate.ToString(),
+        Stends.Add(DefaultValues.VegetableList.Pomegranate.ToString(),
         new Stend()
         {
             BuyPrice = 1.5,
@@ -105,11 +103,13 @@ class RunStore
             }
         }
         );
+
+        return Stends;
     }
 
-    public static uint DayCount { get; set; } = default;
-    public static List<Notification> Notifications{ get; set; } = new List<Notification>();
-    public static Store Store = new Store(0, 10, "MyStore", 100, 0.2);
+    public static uint DayCount { get; set; } = 1;
+    public static Store Store = new Store(0, 10, "MyStore", 100, 0.2, InitStore());
+    public static List<Report> Reports{ get; set; } = new List<Report>();
 
     static void Main(string[] args)
     {
@@ -119,14 +119,17 @@ class RunStore
         // StartMusic();
         InitStore();
 
-        string[] answers = new string[] { "Show Statistics of Day", "Continue", "Exit" };
 
-        for (int k = 0; k < 10; k++)
+        for (int k = 0; k <= 105; k++)
         {
-            if (Random.Shared.Next(0, 100) == 0) { Console.WriteLine("Quarantine Called..."); Store.Quarantine(); }
+
+
+            if (Random.Shared.Next(0, 100) == 0) { Console.WriteLine("Quarantine Called...");  Store.Quarantine(); }
             else
             {
-                Store.NewDay();
+                if(DayCount % 7 == 1 && DayCount != 1)
+                    CustomMenu();
+
 
                 List<Customer> list = new List<Customer>();
                 int loops = Store.Rating;
@@ -135,25 +138,62 @@ class RunStore
                     list = list.Append(new Customer(Store.Rating)).ToList();
 
                 Store.StartSales(list);
+                Store.NewDay();
             }
 
-            while (true)
-            {
-                int choice = UI.GetChoice("Do you Want To:", answers);
-                if (choice == 0) { Console.Clear(); Statistics.ShowStats(); }
-                else if (choice == 1) break;
-                else if (choice == 2) ExitProgram();
-                
-                Console.Clear();
 
-            }
-
-             Console.Clear();
+            //Console.ReadKey();
+             //Console.Clear();
 
         }
 
-        foreach (var item in Notifications)
-            Console.WriteLine(item);
+
+        // foreach (var item in Notifications)
+        //     Console.WriteLine(item);
+    }
+
+    private static void CustomMenu()
+    {
+        string[] answers = new string[] { "Continue" , "Show Statistics of Week", "Exit" };
+
+        while (true)
+        {
+            //int choice = UI.GetChoice("Do you Want To:", answers);
+            (int category, int choice) answer = UI.ChoiceMenuWithCategory(answers, Reports.Select(r => r.Name).ToArray());
+            if (answer.choice == 1) {
+
+                while (true)
+                {
+                    var report = Reports[answer.category];
+                    Console.Clear(); 
+                    Console.WriteLine($"Current Customer Count: {report.CustomerCount.ToString()}");
+                    Console.WriteLine($"Current Profit: {Math.Round(report.TotalProfit,2).ToString()}$");
+                    
+                    Console.WriteLine("\nPress any Key to continue...");
+                    Console.ReadKey();
+
+                    int dayChoice = UI.GetChoice("Choose the Day:", report.Statistics
+                        .Select(s => "Day " + s.OnDay.ToString()).ToArray(), true);
+
+                    Console.Clear();
+
+                    if (dayChoice == -1) break;
+                    else Report.ShowDetails(report[dayChoice]);
+                }
+            }
+            else if (answer.choice == 0) break;
+            else if (answer.choice == 2)
+            {
+                var notifations = Reports[answer.category].Notifications; 
+                foreach (var notf in notifations)
+                    Console.WriteLine(notf);
+                Console.ReadKey();
+            }
+            else if (answer.choice == 3) ExitProgram();
+
+            Console.Clear();
+
+        }
     }
 
     private static void ExitProgram()

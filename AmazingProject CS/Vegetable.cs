@@ -14,28 +14,19 @@ namespace Product
         public Conditions Condition { get; set; }
 
         public Vegetable(double avrageWeight)
-        {
-            if(avrageWeight > 5)Weight = avrageWeight + Extra.GetRandom(-5, 5);
-            else Weight = avrageWeight + Extra.GetRandom() / 1000.0;
-        }
+            => Weight = avrageWeight + Random.Shared.NextDouble();
 
         public void Decay() {
-            if (Extra.GetRandom() != 1) Condition++;
-            else Condition = Conditions.Toxic; 
+            if (Condition == Conditions.Toxic) return;
+            else if (Random.Shared.Next(1,100) == 1) Condition = Conditions.Toxic; 
+            else Condition++;
         }
         public override string ToString() => $"{Name} --> {Condition.ToString()}";
 
-        public static bool operator ==(Vegetable? v1, Vegetable? v2) { 
-            return v1?.ID == v2?.ID; 
-        }
+        public static bool operator ==(Vegetable? v1, Vegetable? v2) 
+            => v1?.ID == v2?.ID; 
         public static bool operator!=(Vegetable? v1, Vegetable? v2)
-        {
-            return v1?.ID != v2?.ID;
-        }
-        //public static bool operator ==(Vegetable v, string name) => v.Name == name;
-        //public static bool operator !=(Vegetable v, string text) => v.Name != text;
+            => v1?.ID != v2?.ID;
 
-        // public static bool operator ==(Vegetable v, VegetableList vegetableType) => v.Name == vegetableType.ToString();
-        // public static bool operator !=(Vegetable v, VegetableList vegetableType) => v.Name != vegetableType.ToString();
     }
 }

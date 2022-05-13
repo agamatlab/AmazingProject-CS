@@ -13,8 +13,4 @@ class Customer {
     }
 
     public override string ToString() => $"Customer Wants To Buy => {HowMuch} {WantToBuy}";
-    public void Buy(Store store)
-    {
-
-    }
 }
