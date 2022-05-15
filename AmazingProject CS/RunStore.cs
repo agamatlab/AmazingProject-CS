@@ -47,7 +47,7 @@ partial class RunStore {
 
     private static void GameLoopStart()
     {
-        while(DayCount <= MAXDAYS)
+        while(DayCount <= MAXDAYS + 1)
         {
             if (Extra.RandomChance()) MyStore.Quarantine();
             else
@@ -57,8 +57,80 @@ partial class RunStore {
 
                 MyStore.StartSales(list);
                 MyStore.NewDay();
+                if (DayCount % DefaultValues.DayCountWeek == 1)
+                    SimulateWeek();
             }
         }
+
+        CustomMenu();
+    }
+
+    static IEnumerable<int> Split(int number, int part)
+    {
+
+        if (number < part)
+            Console.WriteLine("-1 ");
+
+        else if (number % part == 0)
+            for (int i = 0; i < part; i++)
+                yield return (number / part);
+
+        else
+        {
+            int zp = part - (number % part);
+            int pp = number / part;
+
+            for (int i = 0; i < part; i++)
+                if (i >= zp)
+                    yield return pp + 1;
+
+                else
+                    yield return pp;
+        }
+    }
+
+    const int WORKHOURS = 8;
+    const int MSPERHOUR = 3600;
+    const int MSPERMIN = MSPERHOUR / 60;
+    const int MSPERSEC = MSPERHOUR / 3600;
+
+    private static void SimulateWeek()
+    {
+        int dayIndex = 0;
+        while (dayIndex < DefaultValues.DayCountWeek)
+        {
+            DateTime dateTime = new DateTime(1,1,1,9,0,0);
+            int lineIndex = 0;
+            var lines = Reports.Last().Statistics[dayIndex++].BuyerMessages.Split("\r\n").ToList().Distinct().ToList();
+            string divider = lines.First();
+            lines = lines.Skip(1).ToList();
+
+            Console.WriteLine(dateTime.ToLongTimeString());
+            Console.WriteLine(divider);
+            Console.WriteLine(lines[lineIndex++]);
+            Console.WriteLine(divider);
+
+            var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
+            for (int i = 0; i < breaks.Count; i++)
+            {
+                Thread.Sleep(breaks[i]);
+                dateTime = dateTime.AddSeconds(breaks[i]);
+                Console.WriteLine("\n\n");
+                Console.WriteLine(dateTime.ToLongTimeString());
+
+                Console.WriteLine(divider);
+                Console.WriteLine(lines[lineIndex++]);
+                Console.WriteLine(divider);
+
+            }
+
+            Console.Clear();
+            //Console.ReadKey();
+
+        }
+
+        Console.ReadKey();
+
     }
 
     public static List<Customer> CreateCustomerList(int count)
@@ -100,7 +172,7 @@ partial class RunStore {
     static void StartMusic()
     {
         SoundPlayer player = new SoundPlayer();
-        player.SoundLocation = @"C:\Users\user\source\repos\AmazingProject CS\AmazingProject CS\bin\Debug\net6.0\ConsoleMusic.wav";
+        player.SoundLocation = AppDomain.CurrentDomain.BaseDirectory + @"ConsoleMusic.wav";
         player.PlayLooping();
     }
 

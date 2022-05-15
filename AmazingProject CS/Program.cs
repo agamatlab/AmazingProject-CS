@@ -9,13 +9,13 @@ partial class RunStore
 {
 
 
-    private const int MAXDAYS = 98;
+    public const int MAXDAYS = 98;
 
     private static uint _days = default;
     public static uint DayCount
     {
         get { return _days; }
-        set { _days = value; if (value % DefaultValues.DayCountWeek == 1 && value != 1) CustomMenu(); }
+        set { _days = value; }
     }
 
     
