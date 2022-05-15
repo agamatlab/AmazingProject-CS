@@ -8,6 +8,8 @@ namespace Product
 
     class Vegetable
     {
+        public Vegetable() { }
+
         public Guid ID = Guid.NewGuid();
         public string? Name { get; set; }
         public double Weight { get; set; }

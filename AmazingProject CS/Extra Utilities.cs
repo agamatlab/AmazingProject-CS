@@ -18,7 +18,8 @@ static class DefaultValues
 static class Extra
 {
 
+
     public static string templateRemovedVegetable = "Found and Removed => {0} Toxic / Virus Vegetables";
-    public static int GetRandom(int min = 0, int max = 1000) 
-        => min + (DateTime.Now.Millisecond % (max - min));
+    public static bool RandomChance(int min = 1, int max = 100)
+        => Random.Shared.Next(min, max) == min;
 }

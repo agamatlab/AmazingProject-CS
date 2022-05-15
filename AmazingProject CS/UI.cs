@@ -100,7 +100,8 @@ namespace UIElements
             while (@break > 0)
             {
                 Console.Clear();
-                Console.WriteLine($"< {categories[category]} >\n");
+
+                Console.WriteLine($" < {categories[category]} >\n");
                 for (ushort i = 0; i < answerCount; i++)
                 {
                     char prefix = ' ';

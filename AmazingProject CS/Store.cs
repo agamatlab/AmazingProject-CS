@@ -5,6 +5,9 @@ using System.Linq;
 using UIElements;
 class Store
 {
+
+
+
     private double _prof;
 
     public double ProfitMargin
@@ -16,6 +19,9 @@ class Store
         }
     }
 
+
+    public Store() { }
+
     public Store(uint clientCount, byte rating, string? name, uint budget, double profit, Dictionary<string, Stend> stends)
     {
         Stends = stends;
@@ -25,7 +31,6 @@ class Store
         Budget = budget;
         ProfitMargin = profit;
 
-        ReStock();
         InitNewReport();
     }
 
@@ -60,44 +65,40 @@ class Store
     public string? Name { get; set; }
     public uint CustomerCount { get; set; } = 0;
     public Dictionary<string, Stend> Stends { get; set; } = new();
-    private Report _currentReport = new Report();
+    public Report CurrentReport { get; set; } = new Report();
 
-    int CalculateIndex() => ((RunStore.DayCount % DefaultValues.DayCountWeek == 0)
+    public static int CalculateIndex() => ((RunStore.DayCount % DefaultValues.DayCountWeek == 0)
         ? DefaultValues.DayCountWeek 
         : (int)RunStore.DayCount % DefaultValues.DayCountWeek)
         - 1;     
 
-    public void NewDay(bool isQuarantine = false)
+    public void NewDay()
     {
         if (RunStore.DayCount % DefaultValues.DayCountWeek  == 0 && RunStore.DayCount != 0) {
-            _currentReport.CustomerCount = CustomerCount;
-            _currentReport.TotalProfit = Profit;
-            _currentReport.Name = $"Day: {(RunStore.DayCount - 6).ToString()} --> {RunStore.DayCount.ToString()} Reports";
-            RunStore.Reports.Add(_currentReport);
-            _currentReport = new Report();
+            CurrentReport.CustomerCount = CustomerCount;
+            CurrentReport.TotalProfit = Profit;
+            CurrentReport.Name = $"Day: {(RunStore.DayCount - 6).ToString()} --> {RunStore.DayCount.ToString()} Reports";
+            RunStore.Reports.Add(CurrentReport);
+            CurrentReport = new Report();
             InitNewReport();
         }
             
-        RunStore.DayCount++;
         OnNotify?.Invoke();
+        RunStore.DayCount++;
+    }
 
-        if (!isQuarantine){
-            //Console.ForegroundColor = ConsoleColor.White;
-            //Console.WriteLine("Day {0}", RunStore.DayCount);
-                        //Console.WriteLine("Budget starts: {0}", Budget);
-            ReStock();
-                        //Console.WriteLine("Budget ends: {0}", Budget);
-
-            ReOrganize();
-        }
+    public void ReStock()
+    {
+        AddStock();
+        ReOrganize();
     }
 
     void InitNewReport()
     {
-        for (int i = 0; i < DefaultValues.DayCountWeek; i++)
+        for (int i = 1; i <= DefaultValues.DayCountWeek; i++)
         {
-            _currentReport.Notifications.Add(new List<Notification>());
-            _currentReport.Statistics.Add(new DayStats() { OnDay = (uint)(i + 1) });
+            CurrentReport.Notifications.Add(new List<Notification>());
+            CurrentReport.Statistics.Add(new DayStats() { OnDay = (uint)(RunStore.DayCount + i) });
         }
     }
 
@@ -105,35 +106,6 @@ class Store
     {
         stock.Push(element);
         OnNotify += element.Decay;
-    }
-
-    void ReStock1()
-    {
-        uint sum = (uint)Stends.Sum(p => p.Value.Stock.Count);
-        double moneySpent = default;
-        Random rand = new Random();
-        
-        foreach (var pair in Stends)
-        {
-            Stack<Vegetable> newVegetables = new Stack<Vegetable>();
-            Stend stend = pair.Value;
-
-            var useableMoney = Budget * ((sum != 0)? stend.Stock.Count / (double)sum : 1.0 / Stends.Count);
-            int count = (int)(useableMoney / stend.BuyPrice);
-            moneySpent += count * stend.BuyPrice;
-
-            for (int i = 0; i < count; i++)
-            {
-                Vegetable vegetable = pair.Value.CreateNewSample();
-                OnNotify += vegetable.Decay;
-                newVegetables.Push(vegetable);
-            }
-
-
-            pair.Value.Stock = new Stack<Vegetable>(newVegetables.Concat(pair.Value.Stock));
-        }
-        Budget -= moneySpent;
-    
     }
 
     bool StandardizeStends(IEnumerable<KeyValuePair<string, Stend>> collection, uint amount)
@@ -153,7 +125,7 @@ class Store
         return true;
     }
 
-    void ReStock()
+    void AddStock()
     {
         //double minPrice = Stends.Min(p => p.Value.BuyPrice);
 
@@ -216,7 +188,7 @@ class Store
             pair.Value.Stock = RemoveUnwantedCondition(pair.Value.Stock, Conditions.Toxic); // Conditions.Virus
         }
 
-        _currentReport.Notifications[CalculateIndex()]
+        CurrentReport.Notifications[CalculateIndex()]
             .Add(new Notification(String.Format(Extra.templateRemovedVegetable,
             (initialSize - Stends.Sum(p => p.Value.Stock.Count)).ToString())));
     }
@@ -243,7 +215,7 @@ class Store
     public void StartSales(List<Customer> customers)
     {
         int currentIndex = CalculateIndex(); 
-        _currentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToString();
+        CurrentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToString();
 
         var table = new ConsoleTable("Customer NO.", "Wants To Buy", "How Much (kq)", "Quanity", "Rating", "Message");
 
@@ -258,7 +230,7 @@ class Store
             if (currentStend.Stock.Count == 0)
             {
 
-                _currentReport.Notifications[currentIndex]
+                CurrentReport.Notifications[currentIndex]
                     .Add(new Notification($"{customer.WantToBuy} Does Not Exist. Decreasing Rating..."));
                 
                 // Console.WriteLine("No {0} LEft", customer.WantToBuy);
@@ -297,7 +269,7 @@ class Store
                             table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
                                 quantity.ToString(), Rating.ToString(), "Customer Faced Virused or Toxic Vegetable.");
 
-                            _currentReport.Notifications[currentIndex]
+                            CurrentReport.Notifications[currentIndex]
                                 .Add(new Notification($"Customer Faced Toxic or Virus {customer.WantToBuy}. Decreasing Rating..."));
 
                             // Console.WriteLine("Veegetable Contain Virus or Toxic...");
@@ -313,6 +285,7 @@ class Store
                 {
                     table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
                       quantity.ToString(), Rating.ToString(), "Customer wasn't able buy Enough Quantity => Stock Depleted.");
+
                     isContinue = false;
                     break;
                 }
@@ -329,8 +302,8 @@ class Store
         }
 
         // Console.ReadKey();
-        _currentReport.Statistics[currentIndex].BuyerMessages = table.ToString();
-        _currentReport.Statistics[currentIndex].AfterStock = GetStatusTable().ToString();
+        CurrentReport.Statistics[currentIndex].BuyerMessages = table.ToString();
+        CurrentReport.Statistics[currentIndex].AfterStock = GetStatusTable().ToString();
         //Console.ReadKey();
 
 
@@ -342,13 +315,13 @@ class Store
         for (int i = 0; i < 14; i++)
         {
             int currentIndex = CalculateIndex();
-            _currentReport.Notifications[currentIndex].Add(new Notification("Quarantine Started... NO WORK for 14 DAYS"));
+            CurrentReport.Notifications[currentIndex].Add(new Notification("Quarantine Started... NO WORK for 14 DAYS"));
 
-            _currentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToString();
-            _currentReport.Statistics[currentIndex].BuyerMessages = new ConsoleTable("Message", "Quarantine Started... NO WORK for 14 DAYS").ToString();
-            _currentReport.Statistics[currentIndex].AfterStock = GetStatusTable().ToString();
+            CurrentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToString();
+            CurrentReport.Statistics[currentIndex].BuyerMessages = new ConsoleTable("Message", "Quarantine Started... NO WORK for 14 DAYS").ToString();
+            CurrentReport.Statistics[currentIndex].AfterStock = GetStatusTable().ToString();
         
-            NewDay(true);
+            NewDay();
         }
     }
 }
