@@ -7,7 +7,6 @@ using System.Linq;
 using UIElements;
 class Store
 {
-    public int MyProperty { get; set; }
 
     private double _prof;
 
@@ -128,10 +127,7 @@ class Store
     void InitNewReport()
     {
         for (int i = 1; i <= DefaultValues.DayCountWeek; i++)
-        {
-            CurrentReport.Notifications.Add(new List<Notification>());
             CurrentReport.Statistics.Add(new DayStats((uint)(DayCount + i)));
-        }
     }
 
     private void AddVegetable(Stack<Vegetable> stock, Vegetable element)

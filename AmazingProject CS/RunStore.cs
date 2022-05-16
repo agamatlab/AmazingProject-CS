@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Text.Json;
 using System.Media;
 using UIElements;
+using System.Text;
 
 partial class RunStore {
 
@@ -34,7 +35,15 @@ partial class RunStore {
                     Console.Clear();
 
                     if (dayChoice == -1) break;
-                    else Report.ShowDetails(report[dayChoice]);
+                    else
+                    {
+                        report.Statistics[dayChoice].ShowStats();
+                        var data = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + $"days/day {(DefaultValues.DayCountWeek * (answer.category) + (dayChoice + 1)).ToString()}.txt");
+                        Colorful.Console.WriteWithGradient(data, UI.Colors[Random.Shared.Next(UI.Colors.Length)], UI.Colors[Random.Shared.Next(UI.Colors.Length)], 6);
+                        Console.ReadKey();
+                        Console.Clear();
+                        Colorful.Console.ReplaceAllColorsWithDefaults();
+                    }
                 }
             }
             else if (answer.choice == 0) break;
@@ -59,7 +68,7 @@ partial class RunStore {
                 MyStore.NewDay();
                 if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
                     CustomMenu();
-                    //SimulateWeek();
+                //SimulateWeek();
             }
         }
 
@@ -109,24 +118,36 @@ partial class RunStore {
         {
             DateTime dateTime = new DateTime(1,1,1,9,0,0);
             int lineIndex = 0;
-            var lines = Reports.Last().Statistics[dayIndex++].BuyerMessages.Split("\r\n").ToList().Distinct().ToList();
+            var lines = Reports
+                .Last()
+                .Statistics[dayIndex++]
+                .BuyerMessages
+                .Split("\r\n")
+                .Distinct()
+                .ToList();
+
             string divider = lines.First();
             lines = lines.Skip(1).ToList();
+            
+            Color startColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)];
+            Color endColor;
+            do { endColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)]; } 
+            while (endColor == startColor);
 
-            Console.WriteLine(dateTime.ToLongTimeString());
-            SurroundText(lines[lineIndex++], divider);
+            Colorful.Console.WriteWithGradient(Extra.CreateString(divider, lines[lineIndex++], divider), startColor, endColor, 6);
+
 
             var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
             for (int i = 0; i < breaks.Count; i++)
             {
-                Thread.Sleep(breaks[i]);
+                //Thread.Sleep(breaks[i]);
                 dateTime = dateTime.AddSeconds(breaks[i]);
-                Console.WriteLine('\n' + dateTime.ToLongTimeString());
-                SurroundText(lines[lineIndex++], divider);
+                Colorful.Console.WriteWithGradient(Extra.CreateString(dateTime.ToLongTimeString(), divider, lines[lineIndex++], divider), startColor, endColor, 6);
             }
 
+            Console.ReadKey();
             Console.Clear();
-            //Console.ReadKey();
+            Colorful.Console.ReplaceAllColorsWithDefaults();
 
         }
 

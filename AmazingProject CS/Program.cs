@@ -19,7 +19,7 @@ partial class RunStore
 
     static void Main(string[] args)
     {
-        StartMusic();
+        //StartMusic();
         UI.ChangeEncoding(System.Text.Encoding.Unicode);
         InitializeGame();
 

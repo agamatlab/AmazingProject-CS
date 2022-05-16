@@ -2,11 +2,16 @@
 
 namespace UIElements
 {
+    using System.Drawing;
     using System.Text;
 
 
     static class UI
     {
+        public static Color[] Colors = { Color.AliceBlue, Color.Fuchsia, Color.Gold, Color.LightGoldenrodYellow,
+            Color.Green, Color.BlanchedAlmond, Color.Crimson, Color.Cyan, Color.LightSeaGreen, Color.LightSkyBlue};
+
+
         public static readonly int ESCAPE = -1;
         public static void ChangeEncoding(Encoding input, Encoding output)
         {

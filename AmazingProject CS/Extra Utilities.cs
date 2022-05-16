@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 
 static class DefaultValues
 {
@@ -17,7 +18,13 @@ static class DefaultValues
 
 static class Extra
 {
-
+    public static string CreateString(params string[] texts)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (string text in texts)
+            sb.AppendLine(text);
+        return sb.ToString();
+    }
     public static void DeleteFilesInDirectory(string path)
     {
         DirectoryInfo di = new DirectoryInfo(path);
