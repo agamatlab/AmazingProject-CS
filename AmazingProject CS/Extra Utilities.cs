@@ -3,6 +3,11 @@ using System.Text.Json;
 
 static class DefaultValues
 {
+    public static string reportsPath = AppDomain.CurrentDomain.BaseDirectory + "reports.json";
+    public static string storePath = AppDomain.CurrentDomain.BaseDirectory + "store.json";
+    public static string daysPath = AppDomain.CurrentDomain.BaseDirectory + "day.txt";
+    public static string logPath = AppDomain.CurrentDomain.BaseDirectory + "days";
+
     public static string GetRandomEnumVegetable() 
     {
         Array values = Enum.GetValues(typeof(VegetableList));
@@ -42,4 +47,9 @@ static class Extra
 
     public static bool RandomChance(int min = 1, int max = 100)
         => Random.Shared.Next(min, max) == min;
+}
+
+static class ExtensionMethods
+{
+    public static T? GetRandom<T>(this T[] arr) => (arr.Length == 0) ? default(T) : arr[Random.Shared.Next(arr.Length)];
 }

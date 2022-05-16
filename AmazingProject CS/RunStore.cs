@@ -7,51 +7,74 @@ using System.Text;
 
 partial class RunStore {
 
-    private static void CustomMenu()
+    public static void CustomMenu()
     {
-        string[] answers = new string[] { "Continue", "Show Statistics of Week", "Exit" };
-        (int category, int choice) answer;
-
+        string[] answers = new string[] {"Show Statistics of Each Week", "Flush Data" ,"Save & Exit", "Continue" };
+        int mainChoice;
         while (true)
         {
-            answer = UI.ChoiceMenuWithCategory(answers, Reports.Select(r => r.Name).ToArray());
-            if (answer.choice == 1)
-            {
-                Report report = Reports[answer.category];
+            mainChoice = UI.GetChoice("Do You Want To:", answers);
 
-                Console.Clear();
-                Console.WriteLine($"Current Customer Count: {report.CustomerCount.ToString()}");
-                Console.WriteLine($"Current Profit: {Math.Round(report.TotalProfit, 2).ToString()}$");
-
-                Console.WriteLine("\nPress any Key to continue...");
-                Console.ReadKey();
-
-                int dayChoice = default;
-                while (true)
-                {
-                    dayChoice = UI.GetChoice("Choose the Day:", report.Statistics
-                        .Select(s => "Day " + s.OnDay.ToString()).ToArray(), true);
-
-                    Console.Clear();
-
-                    if (dayChoice == -1) break;
-                    else
-                    {
-                        report.Statistics[dayChoice].ShowStats();
-                        var data = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + $"days/day {(DefaultValues.DayCountWeek * (answer.category) + (dayChoice + 1)).ToString()}.txt");
-                        Colorful.Console.WriteWithGradient(data, UI.Colors[Random.Shared.Next(UI.Colors.Length)], UI.Colors[Random.Shared.Next(UI.Colors.Length)], 6);
-                        Console.ReadKey();
-                        Console.Clear();
-                        Colorful.Console.ReplaceAllColorsWithDefaults();
-                    }
-                }
-            }
-            else if (answer.choice == 0) break;
-            else if (answer.choice == 2) ExitProgram();
+            if (mainChoice == 0) ShowDataWeek();
+            else if (mainChoice == 1) FlushFiles();
+            else if (mainChoice == 2) ExitProgram();
+            else if (mainChoice == 3) break;
 
             Console.Clear();
 
         }
+    }
+
+    private static void ShowDataWeek()
+    {
+        int category;
+
+        while (true)
+        {
+            category = UI.GetCategory(Reports.Select(r => r.Name).ToArray(), true);
+            if (category == UI.ESCAPE) break;
+            Report report = Reports[category];
+
+
+            Console.Clear();
+            Console.WriteLine($"Current Customer Count: {report.CustomerCount.ToString()}");
+            Console.WriteLine($"Current Profit: {Math.Round(report.TotalProfit, 2).ToString()}$");
+
+            Console.Write("\nPress any Key to continue...");
+            Console.ReadKey();
+
+            int dayChoice = default;
+            while (true)
+            {
+                dayChoice = UI.GetChoice(report.Name, report.Statistics
+                    .Select(s => "Day " + s.OnDay.ToString()).ToArray(), true);
+
+                Console.Clear();
+
+                if (dayChoice == UI.ESCAPE) break;
+                else
+                {
+                    report.Statistics[dayChoice].ShowStats();
+                    var data = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + $"days/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt");
+                    Colorful.Console.WriteWithGradient(data, UI.Colors[Random.Shared.Next(UI.Colors.Length)], UI.Colors[Random.Shared.Next(UI.Colors.Length)], 6);
+                    Console.ReadKey();
+                    Console.Clear();
+                    Colorful.Console.ReplaceAllColorsWithDefaults();
+                }
+            }
+
+
+        }
+    }
+
+    private static void FlushFiles()
+    {
+        File.WriteAllText(DefaultValues.storePath, "null");
+        File.WriteAllText(DefaultValues.reportsPath, "null");
+        File.WriteAllText(DefaultValues.daysPath, "1");
+        //Extra.DeleteFilesInDirectory(DefaultValues.logPath);
+
+        Environment.Exit(0);
     }
 
     private static void GameLoopStart()
@@ -67,8 +90,8 @@ partial class RunStore {
                 MyStore.StartSales(list);
                 MyStore.NewDay();
                 if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
-                    CustomMenu();
-                //SimulateWeek();
+                    SimulateWeek();
+                //CustomMenu();
             }
         }
 
@@ -113,6 +136,8 @@ partial class RunStore {
 
     private static void SimulateWeek()
     {
+
+
         int dayIndex = 0;
         while (dayIndex < DefaultValues.DayCountWeek)
         {
@@ -134,7 +159,8 @@ partial class RunStore {
             do { endColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)]; } 
             while (endColor == startColor);
 
-            Colorful.Console.WriteWithGradient(Extra.CreateString(divider, lines[lineIndex++], divider), startColor, endColor, 6);
+            Colorful.Console.WriteAscii($"DAY {(MyStore.DayCount - DefaultValues.DayCountWeek + dayIndex - 1).ToString()}", startColor);
+            Colorful.Console.WriteWithGradient(Extra.CreateString(divider, lines[lineIndex++], divider), startColor, endColor, 7);
 
 
             var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
@@ -142,7 +168,7 @@ partial class RunStore {
             {
                 //Thread.Sleep(breaks[i]);
                 dateTime = dateTime.AddSeconds(breaks[i]);
-                Colorful.Console.WriteWithGradient(Extra.CreateString(dateTime.ToLongTimeString(), divider, lines[lineIndex++], divider), startColor, endColor, 6);
+                Colorful.Console.WriteWithGradient(Extra.CreateString((" ==> " + dateTime.ToLongTimeString()), divider, lines[lineIndex++], divider), startColor, endColor, 4);
             }
 
             Console.ReadKey();
@@ -179,14 +205,14 @@ partial class RunStore {
 
     private static void InitializeGame()
     {
-        Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText("reports.json")) ?? new List<Report>();
-        MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText("store.json")) ?? new Store(0, 10, "MyMyStore", 200, 0.2, InitMyStore());
+        Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText(DefaultValues.reportsPath)) ?? new List<Report>();
+        MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText(DefaultValues.storePath)) ?? new Store(0, 10, "MyStore", 200, 0.2, InitMyStore());
 
-        try{ MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText("day.txt")); }
+        try{ MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath)); }
         catch {}
 
-        Console.SetWindowSize(Console.WindowWidth / 10 * 12, Console.WindowHeight / 10 * 11);
-
+        try { Console.SetWindowSize(Console.WindowWidth / 10 * 12, Console.WindowHeight / 10 * 11); }
+        catch { }
 
     }
 

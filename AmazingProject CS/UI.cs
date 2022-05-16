@@ -9,7 +9,8 @@ namespace UIElements
     static class UI
     {
         public static Color[] Colors = { Color.AliceBlue, Color.Fuchsia, Color.Gold, Color.LightGoldenrodYellow,
-            Color.Green, Color.BlanchedAlmond, Color.Crimson, Color.Cyan, Color.LightSeaGreen, Color.LightSkyBlue};
+            Color.Green, Color.BlanchedAlmond, Color.Crimson, Color.Cyan, Color.LightSeaGreen, Color.LightSkyBlue
+        , Color.RebeccaPurple, Color.LightPink, Color.LightSteelBlue};
 
 
         public static readonly int ESCAPE = -1;
@@ -94,6 +95,29 @@ namespace UIElements
             return choice;
         }
 
+
+        public static int GetCategory(string[] categories, bool IsEscape = false)
+        {
+
+            sbyte @break = 1;
+            ushort category = 0;
+            SetColor(ConsoleColor.Green);
+
+            Console.Clear();
+            while (@break > 0)
+            {
+                Console.WriteLine($" < {categories[category]} >\n");
+                //if (IsEscape) Console.WriteLine("Press ESC To Exit...");
+                @break = Convert.ToSByte(ManageChoice(ref category, (ushort)categories.Length, IsEscape));
+                if (@break == ESCAPE) return ESCAPE;
+                Console.Clear();
+            }
+
+            SetColor();
+            return category;
+
+        }
+
         public static (int IndexCategory,int ChoiceIndex) ChoiceMenuWithCategory(string[] answers, string[] categories, bool IsEscape = false)
         {
 
@@ -168,4 +192,7 @@ namespace UIElements
 
 
     }
+
+
+
 }

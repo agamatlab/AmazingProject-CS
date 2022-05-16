@@ -83,7 +83,7 @@ class Store
     public uint DayCount
     {
         get { return _dayCount; }
-        set { _dayCount = value; }
+        set { if(value > RunStore.MAXDAYS ) RunStore.custom _dayCount = value; }
     }
 
     private string _currentPath;
@@ -107,9 +107,9 @@ class Store
         if(DayCount < RunStore.MAXDAYS)
             OnNotify?.Invoke();
         DayCount++;
+        
 
-        _currentPath = AppDomain.CurrentDomain.BaseDirectory
-                + @$"days\day {DayCount.ToString()}.txt";
+        _currentPath = DefaultValues.logPath + @$"\day {DayCount.ToString()}.txt";
 
         Extra.ResetTxt(_currentPath);
         ConfigureLog();
