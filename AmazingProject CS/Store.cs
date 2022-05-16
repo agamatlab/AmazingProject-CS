@@ -1,12 +1,13 @@
 ﻿using ConsoleTables;
+using Microsoft.SqlServer.Server;
 using Product;
+using Serilog;
 using System.Drawing;
 using System.Linq;
 using UIElements;
 class Store
 {
-
-
+    public int MyProperty { get; set; }
 
     private double _prof;
 
@@ -22,6 +23,15 @@ class Store
 
     public Store() { }
 
+    void ConfigureLog()
+    {
+
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.File(_currentPath)
+            .CreateLogger();
+
+    }
+
     public Store(uint clientCount, byte rating, string? name, uint budget, double profit, Dictionary<string, Stend> stends)
     {
         Stends = stends;
@@ -32,6 +42,8 @@ class Store
         ProfitMargin = profit;
 
         InitNewReport();
+        Extra.DeleteFilesInDirectory(AppDomain.CurrentDomain.BaseDirectory + "days");
+        NewDay();
     }
 
     private byte _rating;
@@ -67,26 +79,45 @@ class Store
     public Dictionary<string, Stend> Stends { get; set; } = new();
     public Report CurrentReport { get; set; } = new Report();
 
-    public static int CalculateIndex() => ((RunStore.DayCount % DefaultValues.DayCountWeek == 0)
+    private uint _dayCount = 0;
+
+    public uint DayCount
+    {
+        get { return _dayCount; }
+        set { _dayCount = value; }
+    }
+
+    private string _currentPath;
+
+    public static int CalculateIndex(uint dayCount) => ((dayCount % DefaultValues.DayCountWeek == 0)
         ? DefaultValues.DayCountWeek 
-        : (int)RunStore.DayCount % DefaultValues.DayCountWeek)
+        : (int)dayCount % DefaultValues.DayCountWeek)
         - 1;     
 
     public void NewDay()
     {
-        if (RunStore.DayCount % DefaultValues.DayCountWeek  == 0 && RunStore.DayCount != 0) {
+        if (DayCount % DefaultValues.DayCountWeek  == 0 && DayCount != 0) {
             CurrentReport.CustomerCount = CustomerCount;
             CurrentReport.TotalProfit = Profit;
-            CurrentReport.Name = $"Day: {(RunStore.DayCount - 6).ToString()} --> {RunStore.DayCount.ToString()} Reports";
+            CurrentReport.Name = $"Day: {(DayCount - 6).ToString()} --> {DayCount.ToString()} Reports";
             RunStore.Reports.Add(CurrentReport);
             CurrentReport = new Report();
             InitNewReport();
         }
           
-        if(RunStore.DayCount < RunStore.MAXDAYS)
-        OnNotify?.Invoke();
-        RunStore.DayCount++;
+        if(DayCount < RunStore.MAXDAYS)
+            OnNotify?.Invoke();
+        DayCount++;
+
+        _currentPath = AppDomain.CurrentDomain.BaseDirectory
+                + @$"days\day {DayCount.ToString()}.txt";
+
+        Extra.ResetTxt(_currentPath);
+        ConfigureLog();
+
     }
+
+
 
     public void ReStock()
     {
@@ -99,7 +130,7 @@ class Store
         for (int i = 1; i <= DefaultValues.DayCountWeek; i++)
         {
             CurrentReport.Notifications.Add(new List<Notification>());
-            CurrentReport.Statistics.Add(new DayStats() { OnDay = (uint)(RunStore.DayCount + i) });
+            CurrentReport.Statistics.Add(new DayStats((uint)(DayCount + i)));
         }
     }
 
@@ -189,9 +220,11 @@ class Store
             pair.Value.Stock = RemoveUnwantedCondition(pair.Value.Stock, Conditions.Toxic); // Conditions.Virus
         }
 
-        CurrentReport.Notifications[CalculateIndex()]
-            .Add(new Notification(String.Format(Extra.templateRemovedVegetable,
-            (initialSize - Stends.Sum(p => p.Value.Stock.Count)).ToString())));
+        //CurrentReport.Notifications[CalculateIndex(DayCount)]
+        //    .Add(new Notification());
+        
+        Log.Information($"Found and Removed => {(initialSize - Stends.Sum(p => p.Value.Stock.Count)).ToString()} " +
+            $"Toxic / Virus Vegetables\n\t~ On Day: {DayCount.ToString()}");
     }
 
     void NegativeReview() => Rating -= (byte)Random.Shared.Next(1,5); 
@@ -215,7 +248,7 @@ class Store
 
     public void StartSales(List<Customer> customers)
     {
-        int currentIndex = CalculateIndex(); 
+        int currentIndex = CalculateIndex(DayCount); 
         CurrentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToStringAlternative();
 
         var table = new ConsoleTable("Customer NO.", "Wants To Buy", "How Much (kq)", "Quanity", "Rating", "Message");
@@ -229,8 +262,10 @@ class Store
             if (currentStend.Stock.Count == 0)
             {
 
-                CurrentReport.Notifications[currentIndex]
-                    .Add(new Notification($"{customer.WantToBuy} Does Not Exist. Decreasing Rating..."));
+                //CurrentReport.Notifications[currentIndex]
+                //    .Add(new Notification($"{customer.WantToBuy} Does Not Exist. Decreasing Rating...", DayCount));
+                Log.Warning($"{customer.WantToBuy} Does Not Exist. Decreasing Rating...\n\t~ On Day: {DayCount}");
+
                 NegativeReview();
 
                 table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
@@ -261,8 +296,10 @@ class Store
                             table.AddRow(CustomerCount.ToString(), customer.WantToBuy, Math.Round(customer.HowMuch, 3).ToString(),
                                 quantity.ToString(), Rating.ToString(), "Customer Faced Virused or Toxic Vegetable.");
 
-                            CurrentReport.Notifications[currentIndex]
-                                .Add(new Notification($"Customer Faced Toxic or Virus {customer.WantToBuy}. Decreasing Rating..."));
+                            //CurrentReport.Notifications[currentIndex]
+                                //.Add(new Notification($"Customer Faced Toxic or Virus {customer.WantToBuy}. Decreasing Rating...", DayCount));
+                            Log.Warning($"Customer Faced Toxic or Virus {customer.WantToBuy}. Decreasing Rating...\n\t~ On Day: {DayCount}");
+
 
                             NegativeReview();
                             isContinue = false;
@@ -300,10 +337,11 @@ class Store
 
     public void Quarantine()
     {
-        for (int i = 0; i < 14; i++)
+        for (int i = 14; i > 0; i--)
         {
-            int currentIndex = CalculateIndex();
-            CurrentReport.Notifications[currentIndex].Add(new Notification("Quarantine Started... NO WORK for 14 DAYS"));
+            int currentIndex = CalculateIndex(DayCount);
+            //CurrentReport.Notifications[currentIndex].Add(new Notification("Quarantine Started... NO WORK for 14 DAYS", DayCount));
+            Log.Information($"Quarantine Started... NO WORK for {i.ToString()} more DAYS\n\t~ On Day: {DayCount}");
 
             CurrentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToStringAlternative();
             CurrentReport.Statistics[currentIndex].BuyerMessages = new ConsoleTable("Message", "Quarantine Started... NO WORK for 14 DAYS").ToStringAlternative();

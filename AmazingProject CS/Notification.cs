@@ -1,17 +1,10 @@
 ﻿public class Notification
 {
-    public Notification(string message, DateTime time)
-    {
-        Message = message;
-        Time = time;
-        OnDay = RunStore.DayCount;
-    }
-
-    public Notification(string message)
+    public Notification(string message, uint onDay)
     {
         Message = message;
         Time = DateTime.Now;
-        OnDay = RunStore.DayCount;
+        OnDay = onDay;
     }
 
     public Notification(string message, DateTime time, uint onDay)
@@ -20,6 +13,7 @@
         Time = time;
         OnDay = onDay;
     }
+
     public Notification() { }
 
     public string? Message { get; set; }

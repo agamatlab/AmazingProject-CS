@@ -9,7 +9,9 @@ class DayStats
     public string AfterStock { get; set; }
     public string BuyerMessages { get; set; }
 
-    public DayStats() => OnDay = RunStore.DayCount;
+
+    public DayStats() { }
+    public DayStats(uint dayCount) => OnDay = dayCount;
 
     public void ShowStats()
     {

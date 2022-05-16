@@ -47,7 +47,7 @@ partial class RunStore {
 
     private static void GameLoopStart()
     {
-        while(DayCount <= MAXDAYS + 1)
+        while(MyStore.DayCount <= MAXDAYS + 1)
         {
             if (Extra.RandomChance()) MyStore.Quarantine();
             else
@@ -57,8 +57,9 @@ partial class RunStore {
 
                 MyStore.StartSales(list);
                 MyStore.NewDay();
-                if (DayCount % DefaultValues.DayCountWeek == 1)
-                    SimulateWeek();
+                if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
+                    CustomMenu();
+                    //SimulateWeek();
             }
         }
 
@@ -94,6 +95,13 @@ partial class RunStore {
     const int MSPERMIN = MSPERHOUR / 60;
     const int MSPERSEC = MSPERHOUR / 3600;
 
+    static void SurroundText(string text, string surrounding)
+    {
+        Console.WriteLine(surrounding);
+        Console.WriteLine(text);
+        Console.WriteLine(surrounding);
+    }
+
     private static void SimulateWeek()
     {
         int dayIndex = 0;
@@ -106,22 +114,15 @@ partial class RunStore {
             lines = lines.Skip(1).ToList();
 
             Console.WriteLine(dateTime.ToLongTimeString());
-            Console.WriteLine(divider);
-            Console.WriteLine(lines[lineIndex++]);
-            Console.WriteLine(divider);
+            SurroundText(lines[lineIndex++], divider);
 
             var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
             for (int i = 0; i < breaks.Count; i++)
             {
                 Thread.Sleep(breaks[i]);
                 dateTime = dateTime.AddSeconds(breaks[i]);
-                Console.WriteLine("\n\n");
-                Console.WriteLine(dateTime.ToLongTimeString());
-
-                Console.WriteLine(divider);
-                Console.WriteLine(lines[lineIndex++]);
-                Console.WriteLine(divider);
-
+                Console.WriteLine('\n' + dateTime.ToLongTimeString());
+                SurroundText(lines[lineIndex++], divider);
             }
 
             Console.Clear();
@@ -147,12 +148,12 @@ partial class RunStore {
     {
         File.WriteAllText("store.json", JsonSerializer.Serialize(MyStore));
         File.WriteAllText("reports.json", JsonSerializer.Serialize(Reports));
-        File.WriteAllText("day.txt", DayCount.ToString());
+        File.WriteAllText("day.txt", MyStore.DayCount.ToString());
 
         Environment.Exit(0);
     }
 
-    private static int GetCustomerCount() => MyStore.Rating + ((MyStore.Rating > 95) ? Random.Shared.Next(0, (int)DayCount * 3) : 0);
+    private static int GetCustomerCount() => MyStore.Rating + ((MyStore.Rating > 95) ? Random.Shared.Next(0, (int)MyStore.DayCount * 3) : 0);
 
 
     private static void InitializeGame()
@@ -160,10 +161,9 @@ partial class RunStore {
         Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText("reports.json")) ?? new List<Report>();
         MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText("store.json")) ?? new Store(0, 10, "MyMyStore", 200, 0.2, InitMyStore());
 
-        try{ DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText("day.txt")); }
+        try{ MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText("day.txt")); }
         catch {}
 
-        if (DayCount == 0) DayCount++;
         Console.SetWindowSize(Console.WindowWidth / 10 * 12, Console.WindowHeight / 10 * 11);
 
 

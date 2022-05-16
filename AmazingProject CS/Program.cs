@@ -10,14 +10,6 @@ partial class RunStore
 
 
     public const int MAXDAYS = 98;
-
-    private static uint _days = default;
-    public static uint DayCount
-    {
-        get { return _days; }
-        set { _days = value; }
-    }
-
     
     public static Store MyStore;
     public static List<Report> Reports{ get; set; }

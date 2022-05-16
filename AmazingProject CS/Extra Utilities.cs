@@ -18,8 +18,21 @@ static class DefaultValues
 static class Extra
 {
 
+    public static void DeleteFilesInDirectory(string path)
+    {
+        DirectoryInfo di = new DirectoryInfo(path);
+        FileInfo[] files = di.GetFiles();
+        foreach (FileInfo file in files)
+            file.Delete();
+    }
 
-    public static string templateRemovedVegetable = "Found and Removed => {0} Toxic / Virus Vegetables";
+    public static void ResetTxt(string path)
+    {
+
+        if (File.Exists(path))
+            File.WriteAllText(path, "");
+    }
+
     public static bool RandomChance(int min = 1, int max = 100)
         => Random.Shared.Next(min, max) == min;
 }
