@@ -28,10 +28,10 @@ partial class RunStore {
     private static void ShowDataWeek()
     {
         int category;
-
+        var names = Reports.Select(r => r.Name).ToArray();
         while (true)
         {
-            category = UI.GetCategory(Reports.Select(r => r.Name).ToArray(), true);
+            category = UI.GetCategory(names, true);
             if (category == UI.ESCAPE) break;
             Report report = Reports[category];
 
@@ -44,10 +44,14 @@ partial class RunStore {
             Console.ReadKey();
 
             int dayChoice = default;
+
+            var days = report.Statistics
+                    .Select(s => "Day " + s.OnDay.ToString())
+                    .ToArray();
+
             while (true)
             {
-                dayChoice = UI.GetChoice(report.Name, report.Statistics
-                    .Select(s => "Day " + s.OnDay.ToString()).ToArray(), true);
+                dayChoice = UI.GetChoice(report.Name, days, true);
 
                 Console.Clear();
 
@@ -55,11 +59,17 @@ partial class RunStore {
                 else
                 {
                     report.Statistics[dayChoice].ShowStats();
-                    var data = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + $"days/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt");
-                    Colorful.Console.WriteWithGradient(data, UI.Colors[Random.Shared.Next(UI.Colors.Length)], UI.Colors[Random.Shared.Next(UI.Colors.Length)], 6);
+                    using FileStream fs = new FileStream(DefaultValues.logPath + $"/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt", FileMode.Open);
+                    //var data = File.ReadAllText(DefaultValues.logPath + $"/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt");
+                    
+                    byte[] buffer = new byte[fs.Length];
+                    fs.Read(buffer, 0, buffer.Length);
+                    string data = Encoding.Default.GetString(buffer);
+
+                    Colorful.Console.WriteWithGradient(data, UI.Colors.GetRandom(), UI.Colors.GetRandom(), 6);
+                    
                     Console.ReadKey();
-                    Console.Clear();
-                    Colorful.Console.ReplaceAllColorsWithDefaults();
+                    UI.ResetConsole();
                 }
             }
 
@@ -77,25 +87,26 @@ partial class RunStore {
         Environment.Exit(0);
     }
 
-    private static void GameLoopStart()
+    private static void GameLoop()
     {
         while(MyStore.DayCount <= MAXDAYS + 1)
         {
-            if (Extra.RandomChance()) MyStore.Quarantine();
+            if (!MyStore.IsQuarantine() && MyStore.DayCount == 1) MyStore.StartQuarantine();
+            
+            if (MyStore.IsQuarantine()) MyStore.Quarantine();
             else
             {
                 MyStore.ReStock();
                 List<Customer> list = CreateCustomerList(GetCustomerCount());
-
                 MyStore.StartSales(list);
-                MyStore.NewDay();
-                if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
-                    SimulateWeek();
-                //CustomMenu();
             }
+
+            MyStore.NewDay();
+            if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
+            SimulateWeek();
+                //CustomMenu();
         }
 
-        CustomMenu();
     }
 
     static IEnumerable<int> Split(int number, int part)
@@ -162,14 +173,19 @@ partial class RunStore {
             Colorful.Console.WriteAscii($"DAY {(MyStore.DayCount - DefaultValues.DayCountWeek + dayIndex - 1).ToString()}", startColor);
             Colorful.Console.WriteWithGradient(Extra.CreateString(divider, lines[lineIndex++], divider), startColor, endColor, 7);
 
-
-            var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
-            for (int i = 0; i < breaks.Count; i++)
+            if (lines.Count > 2)
             {
-                //Thread.Sleep(breaks[i]);
-                dateTime = dateTime.AddSeconds(breaks[i]);
-                Colorful.Console.WriteWithGradient(Extra.CreateString((" ==> " + dateTime.ToLongTimeString()), divider, lines[lineIndex++], divider), startColor, endColor, 4);
+
+                var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
+                for (int i = 0; i < breaks.Count; i++)
+                {
+                    //Thread.Sleep(breaks[i]);
+                    dateTime = dateTime.AddSeconds(breaks[i]);
+                    Colorful.Console.WriteWithGradient(Extra.CreateString((" ==> " + dateTime.ToLongTimeString()), divider, lines[lineIndex++], divider), startColor, endColor, 4);
+                }
+
             }
+
 
             Console.ReadKey();
             Console.Clear();
@@ -207,12 +223,10 @@ partial class RunStore {
     {
         Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText(DefaultValues.reportsPath)) ?? new List<Report>();
         MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText(DefaultValues.storePath)) ?? new Store(0, 10, "MyStore", 200, 0.2, InitMyStore());
+        MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath));
 
-        try{ MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath)); }
-        catch {}
 
-        try { Console.SetWindowSize(Console.WindowWidth / 10 * 12, Console.WindowHeight / 10 * 11); }
-        catch { }
+        Console.SetWindowSize(Console.LargestWindowWidth / 10 * 9, Console.LargestWindowHeight / 10 * 9);
 
     }
 

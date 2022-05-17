@@ -77,13 +77,14 @@ class Store
     public uint CustomerCount { get; set; } = 0;
     public Dictionary<string, Stend> Stends { get; set; } = new();
     public Report CurrentReport { get; set; } = new Report();
+    public ushort QuarantineDays { get; set; }
 
     private uint _dayCount = 0;
 
     public uint DayCount
     {
         get { return _dayCount; }
-        set { if(value > RunStore.MAXDAYS ) RunStore.custom _dayCount = value; }
+        set { _dayCount = value; if (value > RunStore.MAXDAYS) RunStore.CustomMenu(); }
     }
 
     private string _currentPath;
@@ -107,6 +108,8 @@ class Store
         if(DayCount < RunStore.MAXDAYS)
             OnNotify?.Invoke();
         DayCount++;
+
+        if (QuarantineDays > 0) QuarantineDays--;
         
 
         _currentPath = DefaultValues.logPath + @$"\day {DayCount.ToString()}.txt";
@@ -116,7 +119,8 @@ class Store
 
     }
 
-
+    public bool IsQuarantine() => QuarantineDays > 0;
+    public void StartQuarantine() => QuarantineDays = (ushort)Random.Shared.Next(1, 14);
 
     public void ReStock()
     {
@@ -333,18 +337,12 @@ class Store
 
     public void Quarantine()
     {
-        for (int i = 14; i > 0; i--)
-        {
-            int currentIndex = CalculateIndex(DayCount);
-            //CurrentReport.Notifications[currentIndex].Add(new Notification("Quarantine Started... NO WORK for 14 DAYS", DayCount));
-            Log.Information($"Quarantine Started... NO WORK for {i.ToString()} more DAYS\n\t~ On Day: {DayCount}");
+        int currentIndex = CalculateIndex(DayCount);
+        Log.Information($"Quarantine Started... NO WORK for {QuarantineDays.ToString()} more DAYS\n\t~ On Day: {DayCount}");
 
-            CurrentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToStringAlternative();
-            CurrentReport.Statistics[currentIndex].BuyerMessages = new ConsoleTable("Message", "Quarantine Started... NO WORK for 14 DAYS").ToStringAlternative();
-            CurrentReport.Statistics[currentIndex].AfterStock = GetStatusTable().ToStringAlternative();
-        
-            NewDay();
-        }
+        CurrentReport.Statistics[currentIndex].BeforeStock = GetStatusTable().ToStringAlternative();
+        CurrentReport.Statistics[currentIndex].BuyerMessages = new ConsoleTable("Message", $"Quarantine Started... NO WORK for {QuarantineDays} DAYS").ToStringAlternative();
+        CurrentReport.Statistics[currentIndex].AfterStock = GetStatusTable().ToStringAlternative();
     }
 }
 

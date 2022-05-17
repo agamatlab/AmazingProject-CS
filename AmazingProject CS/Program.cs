@@ -23,6 +23,6 @@ partial class RunStore
         UI.ChangeEncoding(System.Text.Encoding.Unicode);
         InitializeGame();
 
-        GameLoopStart();
+        GameLoop();
     }
 }

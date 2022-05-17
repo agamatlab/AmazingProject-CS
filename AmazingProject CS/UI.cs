@@ -32,6 +32,12 @@ namespace UIElements
             Console.BackgroundColor = background;
         }
 
+        public static void ResetConsole()
+        {
+            Console.Clear();
+            Colorful.Console.ReplaceAllColorsWithDefaults();
+        }
+
         public static int ManageChoice(ref ushort choice, ushort answerCount, bool IsEscape)
         {
             // Uİ'da dəyərlərin keyboardla idarəsini təmin edir.
