@@ -221,6 +221,7 @@ partial class RunStore {
 
     private static void InitializeGame()
     {
+        InitializePath();
         Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText(DefaultValues.reportsPath)) ?? new List<Report>();
         MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText(DefaultValues.storePath)) ?? new Store(0, 10, "MyStore", 200, 0.2, InitMyStore());
         MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath));
@@ -228,6 +229,22 @@ partial class RunStore {
 
         Console.SetWindowSize(Console.LargestWindowWidth / 10 * 9, Console.LargestWindowHeight / 10 * 9);
 
+    }
+
+    static void CreateFile(string path, string value)
+    {
+        using FileStream fs = new FileStream(path, FileMode.Create);
+
+        byte[] bytes = Encoding.Default.GetBytes(value);
+        fs.Write(bytes, 0, bytes.Length);
+    }
+
+    private static void InitializePath()
+    {
+        if(!Directory.Exists(DefaultValues.logPath)) Directory.CreateDirectory(DefaultValues.logPath);
+        if(!Directory.Exists(DefaultValues.storePath)) CreateFile(DefaultValues.storePath, "null");
+        if(!Directory.Exists(DefaultValues.reportsPath)) CreateFile(DefaultValues.reportsPath, "null");
+        if(!Directory.Exists(DefaultValues.daysPath)) CreateFile(DefaultValues.daysPath,"1");
     }
 
     static void StartMusic()
