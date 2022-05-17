@@ -22,7 +22,6 @@ partial class RunStore
         //StartMusic();
         UI.ChangeEncoding(System.Text.Encoding.Unicode);
         InitializeGame();
-
         GameLoop();
     }
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 static class DefaultValues
 {
     public static string reportsPath = AppDomain.CurrentDomain.BaseDirectory + "reports.json";
+    public static string weightsPath = AppDomain.CurrentDomain.BaseDirectory + "minimumWeights.txt";
     public static string storePath = AppDomain.CurrentDomain.BaseDirectory + "store.json";
     public static string daysPath = AppDomain.CurrentDomain.BaseDirectory + "day.txt";
     public static string logPath = AppDomain.CurrentDomain.BaseDirectory + "days";
@@ -16,7 +17,7 @@ static class DefaultValues
             .ToString();
     }
     public enum VegetableList { Cucumber = 1, Tomato, Union, Garlic, Grape, Pomegranate };
-    public static Dictionary<string, double> MinimumWeights = JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText("MinimumWeights.txt"));
+    public static Dictionary<string, double> MinimumWeights;
     public const int DayCountWeek = 7;
 
 }

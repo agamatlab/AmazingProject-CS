@@ -91,7 +91,7 @@ partial class RunStore {
     {
         while(MyStore.DayCount <= MAXDAYS + 1)
         {
-            if (!MyStore.IsQuarantine() && MyStore.DayCount == 1) MyStore.StartQuarantine();
+            if (!MyStore.IsQuarantine() && Extra.RandomChance()) MyStore.StartQuarantine();
             
             if (MyStore.IsQuarantine()) MyStore.Quarantine();
             else
@@ -209,9 +209,9 @@ partial class RunStore {
 
     private static void ExitProgram()
     {
-        File.WriteAllText("store.json", JsonSerializer.Serialize(MyStore));
-        File.WriteAllText("reports.json", JsonSerializer.Serialize(Reports));
-        File.WriteAllText("day.txt", MyStore.DayCount.ToString());
+        File.WriteAllText(DefaultValues.storePath, JsonSerializer.Serialize(MyStore));
+        File.WriteAllText(DefaultValues.reportsPath, JsonSerializer.Serialize(Reports));
+        File.WriteAllText(DefaultValues.daysPath, MyStore.DayCount.ToString());
 
         Environment.Exit(0);
     }
@@ -222,10 +222,11 @@ partial class RunStore {
     private static void InitializeGame()
     {
         InitializePath();
+
         Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText(DefaultValues.reportsPath)) ?? new List<Report>();
         MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText(DefaultValues.storePath)) ?? new Store(0, 10, "MyStore", 200, 0.2, InitMyStore());
         MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath));
-
+        DefaultValues.MinimumWeights = JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText(DefaultValues.weightsPath));
 
         Console.SetWindowSize(Console.LargestWindowWidth / 10 * 9, Console.LargestWindowHeight / 10 * 9);
 
@@ -242,6 +243,7 @@ partial class RunStore {
     private static void InitializePath()
     {
         if(!Directory.Exists(DefaultValues.logPath)) Directory.CreateDirectory(DefaultValues.logPath);
+        if(!Directory.Exists(DefaultValues.weightsPath)) CreateFile(DefaultValues.weightsPath, "{\"Pomegranate\":0.312,\"Cucumber\":0.214,\"Tomato\":0.132,\"Garlic\":0.33,\"Grape\":0.48,\"Union\":0.112}");
         if(!Directory.Exists(DefaultValues.storePath)) CreateFile(DefaultValues.storePath, "null");
         if(!Directory.Exists(DefaultValues.reportsPath)) CreateFile(DefaultValues.reportsPath, "null");
         if(!Directory.Exists(DefaultValues.daysPath)) CreateFile(DefaultValues.daysPath,"1");
