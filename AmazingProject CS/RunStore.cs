@@ -4,9 +4,16 @@ using System.Text.Json;
 using System.Media;
 using UIElements;
 using System.Text;
+using System.Runtime.InteropServices;
 
 partial class RunStore {
+    
+    public const int MAXDAYS = 98;
 
+    public static Store MyStore;
+    public static List<Report> Reports { get; set; }
+    
+    
     public static void CustomMenu()
     {
         string[] answers = new string[] {"Show Statistics of Each Week", "Flush Data" ,"Save & Exit", "Continue" };
@@ -59,17 +66,24 @@ partial class RunStore {
                 else
                 {
                     report.Statistics[dayChoice].ShowStats();
-                    using FileStream fs = new FileStream(DefaultValues.logPath + $"/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt", FileMode.Open);
-                    //var data = File.ReadAllText(DefaultValues.logPath + $"/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt");
+                    try
+                    {
+                        string data = Extra.ReadFile(DefaultValues.logPath + $"/day {(DefaultValues.DayCountWeek * (category) + (dayChoice + 1)).ToString()}.txt");
+                        Colorful.Console.WriteWithGradient(data, UI.Colors.GetRandom(), UI.Colors.GetRandom(), 6);
                     
-                    byte[] buffer = new byte[fs.Length];
-                    fs.Read(buffer, 0, buffer.Length);
-                    string data = Encoding.Default.GetString(buffer);
 
-                    Colorful.Console.WriteWithGradient(data, UI.Colors.GetRandom(), UI.Colors.GetRandom(), 6);
-                    
-                    Console.ReadKey();
-                    UI.ResetConsole();
+                    }
+                    catch (IOException)
+                    {
+                        Console.WriteLine("Log Information can not accesed, as FILE ");
+                    }
+                    finally
+                    {
+                        Console.ReadKey();
+                        UI.ResetConsole();
+
+                    }
+
                 }
             }
 
@@ -87,24 +101,24 @@ partial class RunStore {
         Environment.Exit(0);
     }
 
-    private static void GameLoop()
+    public static void GameLoop()
     {
         while(MyStore.DayCount <= MAXDAYS + 1)
         {
+            if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
+                CustomMenu();
+
             if (!MyStore.IsQuarantine() && Extra.RandomChance()) MyStore.StartQuarantine();
             
             if (MyStore.IsQuarantine()) MyStore.Quarantine();
             else
             {
                 MyStore.ReStock();
-                List<Customer> list = CreateCustomerList(GetCustomerCount());
-                MyStore.StartSales(list);
+                MyStore.StartSales(CreateCustomerList(GetCustomerCount()));
             }
 
+            SimulateLastDay();
             MyStore.NewDay();
-            if (MyStore.DayCount % DefaultValues.DayCountWeek == 1 && Reports.Count != 0)
-            SimulateWeek();
-                //CustomMenu();
         }
 
     }
@@ -145,55 +159,51 @@ partial class RunStore {
         Console.WriteLine(surrounding);
     }
 
-    private static void SimulateWeek()
+    private static void SimulateLastDay()
     {
+        // Heftedeki satishlari gostermek meqsedi ile tamamile 'ruchnoy' kodlarla yazilmish functiondir.
 
+        DateTime dateTime = new DateTime(1,1,1,9,0,0); // default time | TimeOnly'de lazimi methodlar olmadigindan,
+                                      // Datetime istifade olunub.
+        int lineIndex = 0;
+        var lines = MyStore.CurrentReport
+            .Statistics[Store.CalculateIndex(MyStore.DayCount)]
+            .BuyerMessages
+            .Split("\r\n")
+            .Distinct()
+            .ToList();
 
-        int dayIndex = 0;
-        while (dayIndex < DefaultValues.DayCountWeek)
-        {
-            DateTime dateTime = new DateTime(1,1,1,9,0,0);
-            int lineIndex = 0;
-            var lines = Reports
-                .Last()
-                .Statistics[dayIndex++]
-                .BuyerMessages
-                .Split("\r\n")
-                .Distinct()
-                .ToList();
-
-            string divider = lines.First();
-            lines = lines.Skip(1).ToList();
+        string divider = lines.First();
+        lines = lines.Skip(1).ToList();
             
-            Color startColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)];
-            Color endColor;
-            do { endColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)]; } 
-            while (endColor == startColor);
+        Color startColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)];
+        Color endColor;
+        do { endColor = UI.Colors[Random.Shared.Next(UI.Colors.Length)]; } 
+        while (endColor == startColor);
 
-            Colorful.Console.WriteAscii($"DAY {(MyStore.DayCount - DefaultValues.DayCountWeek + dayIndex - 1).ToString()}", startColor);
-            Colorful.Console.WriteWithGradient(Extra.CreateString(divider, lines[lineIndex++], divider), startColor, endColor, 7);
+        Colorful.Console.WriteAscii($"DAY {MyStore.DayCount.ToString()}", startColor);
+        Colorful.Console.WriteWithGradient(Extra.CreateString(divider, lines[lineIndex++], divider), startColor, endColor, 7);
+        int customerCount = lines.Count - 2;
 
-            if (lines.Count > 2)
+        if (lines.Count > 2)
+        {
+
+            var breaks = Split(WORKHOURS * MSPERHOUR, customerCount).ToList();
+            for (int i = 0; i < breaks.Count; i++)
             {
-
-                var breaks = Split(WORKHOURS * MSPERHOUR, lines.Count - 2).ToList();
-                for (int i = 0; i < breaks.Count; i++)
-                {
-                    //Thread.Sleep(breaks[i]);
-                    dateTime = dateTime.AddSeconds(breaks[i]);
-                    Colorful.Console.WriteWithGradient(Extra.CreateString((" ==> " + dateTime.ToLongTimeString()), divider, lines[lineIndex++], divider), startColor, endColor, 4);
-                }
-
+                //Thread.Sleep(breaks[i]);
+                dateTime = dateTime.AddSeconds(breaks[i]);
+                Colorful.Console.WriteWithGradient(Extra.CreateString((" ==> " + dateTime.ToLongTimeString()), divider, lines[lineIndex++], divider), startColor, endColor, 4);
             }
 
-
-            Console.ReadKey();
-            Console.Clear();
-            Colorful.Console.ReplaceAllColorsWithDefaults();
-
+            Colorful.Console.WriteWithGradient($"\nCount: {customerCount.ToString()}", startColor, endColor);
         }
 
+
         Console.ReadKey();
+        Console.Clear();
+        Colorful.Console.ReplaceAllColorsWithDefaults();
+
 
     }
 
@@ -216,48 +226,61 @@ partial class RunStore {
         Environment.Exit(0);
     }
 
-    private static int GetCustomerCount() => MyStore.Rating + ((MyStore.Rating > 95) ? Random.Shared.Next(0, (int)MyStore.DayCount * 3) : 0);
+    private static int GetCustomerCount() => MyStore.Rating + ((MyStore.Rating > 95) ? Random.Shared.Next((int)MyStore.DayCount, (int)MyStore.DayCount * 3) : 0);
 
 
-    private static void InitializeGame()
+    public static void InitializeGame()
     {
         InitializePath();
 
+        uint dayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath));
+        if(dayCount == 1)
+            Extra.DeleteFilesInDirectory(DefaultValues.logPath);
+
         Reports = JsonSerializer.Deserialize<List<Report>>(File.ReadAllText(DefaultValues.reportsPath)) ?? new List<Report>();
-        MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText(DefaultValues.storePath)) ?? new Store(0, 10, "MyStore", 200, 0.2, InitMyStore());
-        MyStore.DayCount = JsonSerializer.Deserialize<uint>(File.ReadAllText(DefaultValues.daysPath));
+        MyStore = JsonSerializer.Deserialize<Store>(File.ReadAllText(DefaultValues.storePath)) ?? new Store(0, 10, "Bazar Store", 200, 0.2, InitializeStends());
         DefaultValues.MinimumWeights = JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText(DefaultValues.weightsPath));
+        MyStore.DayCount = dayCount;
 
-        Console.SetWindowSize(Console.LargestWindowWidth / 10 * 9, Console.LargestWindowHeight / 10 * 9);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            Console.SetWindowSize(Console.LargestWindowWidth / 10 * 9, Console.LargestWindowHeight / 10 * 9);
+
 
     }
 
-    static void CreateFile(string path, string value)
-    {
-        using FileStream fs = new FileStream(path, FileMode.Create);
 
-        byte[] bytes = Encoding.Default.GetBytes(value);
-        fs.Write(bytes, 0, bytes.Length);
-    }
 
     private static void InitializePath()
     {
-        if(!Directory.Exists(DefaultValues.logPath)) Directory.CreateDirectory(DefaultValues.logPath);
-        if(!Directory.Exists(DefaultValues.weightsPath)) CreateFile(DefaultValues.weightsPath, "{\"Pomegranate\":0.312,\"Cucumber\":0.214,\"Tomato\":0.132,\"Garlic\":0.33,\"Grape\":0.48,\"Union\":0.112}");
-        if(!Directory.Exists(DefaultValues.storePath)) CreateFile(DefaultValues.storePath, "null");
-        if(!Directory.Exists(DefaultValues.reportsPath)) CreateFile(DefaultValues.reportsPath, "null");
-        if(!Directory.Exists(DefaultValues.daysPath)) CreateFile(DefaultValues.daysPath,"1");
+        if(!Directory.Exists(DefaultValues.logPath)) 
+            Directory.CreateDirectory(DefaultValues.logPath);
+
+        if (!File.Exists(DefaultValues.weightsPath))
+            Extra.CreateFile(DefaultValues.weightsPath, "{\"Pomegranate\":0.312,\"Cucumber\":0.214,\"Tomato\":0.132,\"Garlic\":0.33,\"Grape\":0.48,\"Union\":0.112}");
+
+        if (!File.Exists(DefaultValues.storePath)) 
+            Extra.CreateFile(DefaultValues.storePath, "null");
+
+        if(!File.Exists(DefaultValues.reportsPath)) 
+            Extra.CreateFile(DefaultValues.reportsPath, "null");
+
+        if(!File.Exists(DefaultValues.daysPath)) 
+            Extra.CreateFile(DefaultValues.daysPath,"1");
     }
 
-    static void StartMusic()
+    public static void StartMusic()
     {
-        SoundPlayer player = new SoundPlayer();
-        player.SoundLocation = AppDomain.CurrentDomain.BaseDirectory + @"ConsoleMusic.wav";
-        player.PlayLooping();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            SoundPlayer player = new SoundPlayer();
+            player.SoundLocation = AppDomain.CurrentDomain.BaseDirectory + @"ConsoleMusic.wav";
+            player.PlayLooping();
+        }
     }
 
-    static Dictionary<string, Stend> InitMyStore()
+    static Dictionary<string, Stend> InitializeStends()
     {
+        // Eger oyunda evvelki save olunmus datalar yoxdursa, ilk defe default melumatlarla magaza stendlerinin yaradilmasi
         Dictionary<string, Stend> Stends = new Dictionary<string, Stend>();
         Stends.Add(DefaultValues.VegetableList.Tomato.ToString(),
         new Stend()

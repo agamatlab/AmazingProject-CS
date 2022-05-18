@@ -5,23 +5,16 @@ using System.Text.Json;
 using System.Media;
 using UIElements;
 
-partial class RunStore
+class Program
 {
-
-
-    public const int MAXDAYS = 98;
-    
-    public static Store MyStore;
-    public static List<Report> Reports{ get; set; }
-
 
 
 
     static void Main(string[] args)
     {
-        //StartMusic();
+        RunStore.StartMusic();
         UI.ChangeEncoding(System.Text.Encoding.Unicode);
-        InitializeGame();
-        GameLoop();
+        RunStore.InitializeGame();
+        RunStore.GameLoop();
     }
 }

@@ -9,7 +9,7 @@ static class DefaultValues
     public static string daysPath = AppDomain.CurrentDomain.BaseDirectory + "day.txt";
     public static string logPath = AppDomain.CurrentDomain.BaseDirectory + "days";
 
-    public static string GetRandomEnumVegetable() 
+    public static string GetRandomEnumVegetable()
     {
         Array values = Enum.GetValues(typeof(VegetableList));
         return ((VegetableList)values
@@ -17,13 +17,30 @@ static class DefaultValues
             .ToString();
     }
     public enum VegetableList { Cucumber = 1, Tomato, Union, Garlic, Grape, Pomegranate };
-    public static Dictionary<string, double> MinimumWeights;
+    public static Dictionary<string, double> MinimumWeights = new Dictionary<string, double>();
     public const int DayCountWeek = 7;
 
 }
 
 static class Extra
 {
+    public static string ReadFile(string path)
+    {
+        using FileStream fs = new FileStream(path, FileMode.Open);
+
+        byte[] buffer = new byte[fs.Length];
+        fs.Read(buffer, 0, buffer.Length);
+        return Encoding.Default.GetString(buffer);
+    }
+
+    public static void CreateFile(string path, string value)
+    {
+        using FileStream fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
+
+        byte[] bytes = Encoding.Default.GetBytes(value);
+        fs.Write(bytes, 0, bytes.Length);
+    }
+
     public static string CreateString(params string[] texts)
     {
         StringBuilder sb = new StringBuilder();

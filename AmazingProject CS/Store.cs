@@ -41,7 +41,6 @@ class Store
         ProfitMargin = profit;
 
         InitNewReport();
-        Extra.DeleteFilesInDirectory(AppDomain.CurrentDomain.BaseDirectory + "days");
         NewDay();
     }
 
@@ -56,20 +55,8 @@ class Store
         }
     }
 
-    private double _budget;
-
-    public double Budget
-    {
-        get { return _budget; }
-        set { 
-            if ( value < 0) 
-                throw new ArgumentOutOfRangeException("Value can't be less than 0"); 
-            _budget = value; 
-        }
-    }
-
-
-
+    public double Budget { get; set; }
+    
     public event Action? OnNotify;
     public double Profit { get; set; }
     public uint ClientCount { get; set; }
@@ -113,8 +100,6 @@ class Store
         
 
         _currentPath = DefaultValues.logPath + @$"\day {DayCount.ToString()}.txt";
-
-        Extra.ResetTxt(_currentPath);
         ConfigureLog();
 
     }
@@ -145,13 +130,15 @@ class Store
         while (Stends.Min(p => p.Value.Stock.Count) != amount)
             foreach (var pair in collection)
                 if (pair.Value.Stock.Count < amount)
-                    try
+
+                    if(Budget >= pair.Value.BuyPrice)
                     {
                         Budget -= pair.Value.BuyPrice;
                         AddVegetable(pair.Value.Stock, pair.Value.CreateNewSample());
 
                     }
-                    catch (ArgumentOutOfRangeException) { return false; }
+                    else return false;
+
                 else collection = collection.Where(p => p.Key != pair.Key);
 
         return true;
@@ -169,15 +156,7 @@ class Store
         belowNeeded = Stends.Where(p => p.Value.Stock.Count < maxCount);
         if(!StandardizeStends(belowNeeded, (uint)maxCount)) return;
 
-        while (true)
-            foreach (var pair in Stends)
-                try
-                {
-                    Budget -= pair.Value.BuyPrice;
-                    AddVegetable(pair.Value.Stock ,pair.Value.CreateNewSample());
-                }
-                catch (ArgumentOutOfRangeException) { return; }
-
+        StandardizeStends(Stends, 2000);
     }
 
     public static Stack<T> SortAscendingStack<T,TResult>(Stack<T> input, Func<T,TResult> selector)
